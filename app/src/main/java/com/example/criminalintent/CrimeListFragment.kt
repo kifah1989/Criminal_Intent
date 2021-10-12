@@ -78,7 +78,6 @@ class CrimeListFragment : Fragment() {
     }
     private inner class NormalCrimeHolder(view: View) : CrimeHolder(view), View.OnClickListener {
         val solvedImageView: ImageView = itemView.findViewById(R.id.crime_solved)
-
         init {
             itemView.setOnClickListener(this)
         }
@@ -156,7 +155,6 @@ class CrimeListFragment : Fragment() {
         override fun areItemsTheSame(oldItem: Crime, newItem: Crime): Boolean {
             return oldItem.id == newItem.id
         }
-
         override fun areContentsTheSame(oldItem: Crime, newItem: Crime): Boolean {
             return oldItem == newItem
         }
