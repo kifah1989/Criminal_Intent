@@ -9,9 +9,9 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import java.sql.Time
 import java.util.*
-private const val ARG_TIME = "Time"
-private const val ARG_REQUEST_CODE_TIME = "requestCodeTime"
-private const val RESULT_TIME_KEY = "DialogTime"
+private const val ARG_TIME = "Date"
+private const val ARG_REQUEST_CODE_TIME = "requestCode"
+private const val RESULT_TIME_KEY = "DialogDate"
 
 class TimePickerFragment: DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {

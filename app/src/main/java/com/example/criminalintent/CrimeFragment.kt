@@ -20,7 +20,7 @@ private const val DIALOG_DATE = "Date"
 private const val DIALOG_TIME = "Time"
 private const val ARG_CRIME_ID = "crime_id"
 private const val REQUEST_DATE = "DialogDate"
-private const val REQUEST_TIME = "Dialog"
+private const val REQUEST_TIME = "DialogTime"
 private const val TAG = "CrimeFragment"
 class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var crime: Crime
@@ -66,6 +66,8 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 }
             })
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
+        childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
+
     }
     override fun onStart() {
         super.onStart()
@@ -99,24 +101,25 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         }
         dateButton.setOnClickListener {
             DatePickerFragment.newInstance(crime.date, REQUEST_DATE)
-                .show(childFragmentManager, DIALOG_DATE)
+                .show(childFragmentManager, REQUEST_DATE)
 
         }
         timeButton.setOnClickListener{
             TimePickerFragment.newInstance(crime.time, REQUEST_TIME)
-                .show(childFragmentManager, DIALOG_TIME)
+                .show(childFragmentManager, REQUEST_TIME)
         }
     }
     override fun onFragmentResult(requestCode: String, result: Bundle) {
         when(requestCode) {
+            REQUEST_TIME -> {
+                Log.d(TAG, "received result for $requestCode")
+                crime.time = TimePickerFragment.getSelectedTime(result)
+                updateUI()
+            }
             REQUEST_DATE -> {
                 Log.d(TAG, "received result for $requestCode")
                 crime.date = DatePickerFragment.getSelectedDate(result)
                 updateUI()
-            }
-            REQUEST_TIME -> {
-                Log.d(TAG, "received result for $requestCode")
-                crime.time = TimePickerFragment.getSelectedTime(result)
             }
         }
     }
