@@ -8,7 +8,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import java.util.*
 
-private const val ARG_DATE = "date"
+private const val ARG_DATE = "Date"
 private const val ARG_REQUEST_CODE = "requestCode"
 private const val RESULT_DATE_KEY = "DialogDate"
 

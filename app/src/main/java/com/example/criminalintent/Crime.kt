@@ -14,6 +14,8 @@ data class Crime(
     var
     date: Date = Date(),
     var
+    time: Date = Date(),
+    var
     isSolved: Boolean = false,
     var
     requiresPolice: Boolean = false

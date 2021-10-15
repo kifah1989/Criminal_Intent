@@ -3,6 +3,7 @@ package com.example.criminalintent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.text.format.DateFormat
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,14 +16,17 @@ import androidx.fragment.app.FragmentResultListener
 import androidx.lifecycle.ViewModelProvider
 import java.util.*
 import androidx.fragment.app.setFragmentResult
-private const val DIALOG_DATE = "DialogDate"
+private const val DIALOG_DATE = "Date"
+private const val DIALOG_TIME = "Time"
 private const val ARG_CRIME_ID = "crime_id"
 private const val REQUEST_DATE = "DialogDate"
+private const val REQUEST_TIME = "Dialog"
 private const val TAG = "CrimeFragment"
 class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var crime: Crime
     private lateinit var titleField: EditText
     private lateinit var dateButton: Button
+    private lateinit var timeButton: Button
     private lateinit var solvedCheckBox: CheckBox
 
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
@@ -42,6 +46,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         val view = inflater.inflate(R.layout.fragment_crime, container, false)
         titleField = view.findViewById(R.id.crime_title) as EditText
         dateButton = view.findViewById(R.id.crime_date) as Button
+        timeButton = view.findViewById(R.id.crime_time) as Button
         solvedCheckBox = view.findViewById(R.id.crime_solved) as CheckBox
         //or you can use .apply to apply set of properties to a view
         // dateButton.apply {
@@ -94,9 +99,12 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         }
         dateButton.setOnClickListener {
             DatePickerFragment.newInstance(crime.date, REQUEST_DATE)
-
                 .show(childFragmentManager, DIALOG_DATE)
 
+        }
+        timeButton.setOnClickListener{
+            TimePickerFragment.newInstance(crime.time, REQUEST_TIME)
+                .show(childFragmentManager, DIALOG_TIME)
         }
     }
     override fun onFragmentResult(requestCode: String, result: Bundle) {
@@ -105,6 +113,10 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 Log.d(TAG, "received result for $requestCode")
                 crime.date = DatePickerFragment.getSelectedDate(result)
                 updateUI()
+            }
+            REQUEST_TIME -> {
+                Log.d(TAG, "received result for $requestCode")
+                crime.time = TimePickerFragment.getSelectedTime(result)
             }
         }
     }
@@ -116,6 +128,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private fun updateUI() {
         titleField.setText(crime.title)
         dateButton.text = crime.date.toString()
+        timeButton.text = DateFormat.format("hh:mm", this.crime.time)
         solvedCheckBox.apply {
             isChecked = crime.isSolved
             jumpDrawablesToCurrentState()
