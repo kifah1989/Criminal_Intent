@@ -104,7 +104,9 @@ class CrimeListFragment : Fragment() {
         fun bind(crime: Crime) {
             this.crime = crime
             titleTextView.text = this.crime.title
-            dateTextView.text = DateFormat.format("EEE dd MMM yyyy, hh:mm", this.crime.date)
+            val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date)
+            val time = DateFormat.format("hh:mm", this.crime.time)
+            dateTextView.text = "$date $time"
             solvedImageView.visibility = if (crime.isSolved) {
                 View.VISIBLE
             } else {
