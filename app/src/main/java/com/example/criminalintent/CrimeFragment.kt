@@ -28,6 +28,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var dateButton: Button
     private lateinit var timeButton: Button
     private lateinit var solvedCheckBox: CheckBox
+    private lateinit var policeRequired: CheckBox
 
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
@@ -48,11 +49,8 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         dateButton = view.findViewById(R.id.crime_date) as Button
         timeButton = view.findViewById(R.id.crime_time) as Button
         solvedCheckBox = view.findViewById(R.id.crime_solved) as CheckBox
-        //or you can use .apply to apply set of properties to a view
-        // dateButton.apply {
-        // text = crime.date.toString()
-        // isEnabled = false
-        // }
+        policeRequired = view.findViewById(R.id.require_polic) as CheckBox
+
         return view
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -99,6 +97,11 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 crime.isSolved = isChecked
             }
         }
+        policeRequired.apply {
+            setOnCheckedChangeListener { _,isChecked ->
+                crime.requiresPolice = isChecked
+            }
+        }
         dateButton.setOnClickListener {
             DatePickerFragment.newInstance(crime.date, REQUEST_DATE)
                 .show(childFragmentManager, REQUEST_DATE)
@@ -134,6 +137,10 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         timeButton.text = DateFormat.format("hh:mm", this.crime.time)
         solvedCheckBox.apply {
             isChecked = crime.isSolved
+            jumpDrawablesToCurrentState()
+        }
+        policeRequired.apply {
+            isChecked = crime.requiresPolice
             jumpDrawablesToCurrentState()
         }
     }
