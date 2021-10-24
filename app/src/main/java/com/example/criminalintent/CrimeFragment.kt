@@ -3,7 +3,6 @@ package com.example.criminalintent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.text.format.DateFormat
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -13,9 +12,10 @@ import android.widget.CheckBox
 import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentResultListener
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import java.util.*
-import androidx.fragment.app.setFragmentResult
+import com.google.firebase.Timestamp
+
 private const val DIALOG_DATE = "Date"
 private const val DIALOG_TIME = "Time"
 private const val ARG_CRIME_ID = "crime_id"
@@ -23,6 +23,7 @@ private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
 private const val TAG = "CrimeFragment"
 class CrimeFragment : Fragment(), FragmentResultListener {
+    private lateinit var viewModel: CrimeDetailViewModel
     private lateinit var crime: Crime
     private lateinit var titleField: EditText
     private lateinit var dateButton: Button
@@ -30,14 +31,9 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var solvedCheckBox: CheckBox
     private lateinit var policeRequired: CheckBox
 
-    private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
-        ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
-    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         crime = Crime()
-        val crimeId: UUID = arguments?.getSerializable(ARG_CRIME_ID) as UUID
-        crimeDetailViewModel.loadCrime(crimeId)
     }
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,16 +49,16 @@ class CrimeFragment : Fragment(), FragmentResultListener {
 
         return view
     }
+    private val observerCrime = Observer<Crime> {
+        Log.d(TAG, "Got crimes ${it}")
+        updateUI(it)
+
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        crimeDetailViewModel.crimeLiveData.observe(
-            viewLifecycleOwner,
-            { crime ->
-                crime?.let {
-                    this.crime = crime
-                    updateUI()
-                }
-            })
+        viewModel = ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
+        viewModel.crimeLiveData.observe(viewLifecycleOwner, observerCrime)
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
 
@@ -116,42 +112,45 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         when(requestCode) {
             REQUEST_TIME -> {
                 Log.d(TAG, "received result for $requestCode")
-                crime.time = TimePickerFragment.getSelectedTime(result)
-                updateUI()
+                crime.time = Timestamp(TimePickerFragment.getSelectedTime(result))
+                updateUI(crime)
             }
             REQUEST_DATE -> {
                 Log.d(TAG, "received result for $requestCode")
-                crime.date = DatePickerFragment.getSelectedDate(result)
-                updateUI()
+                crime.date = Timestamp(DatePickerFragment.getSelectedDate(result))
+                updateUI(crime)
             }
         }
     }
     override fun onStop() {
         super.onStop()
-        crimeDetailViewModel.saveCrime(crime)
+        viewModel.saveCrime(crime)
     }
 
-    private fun updateUI() {
+    private fun updateUI(crime: Crime) {
         titleField.setText(crime.title)
-        dateButton.text = DateFormat.format("EEE dd MMM yyyy", this.crime.date)
-        timeButton.text = DateFormat.format("hh:mm", this.crime.time)
+        dateButton.text = crime.date.toString()
+        timeButton.text = crime.time.toString()
         solvedCheckBox.apply {
-            isChecked = crime.isSolved
+            isChecked = false
             jumpDrawablesToCurrentState()
         }
         policeRequired.apply {
-            isChecked = crime.requiresPolice
+            isChecked = false
             jumpDrawablesToCurrentState()
         }
     }
     companion object {
-        fun newInstance(crimeId: UUID): CrimeFragment {
+        fun newInstance(crimeId: String): CrimeFragment {
             val args = Bundle().apply {
                 putSerializable(ARG_CRIME_ID, crimeId)
             }
             return CrimeFragment().apply {
                 arguments = args
             }
+        }
+        fun newCrime(): CrimeFragment {
+            return CrimeFragment()
         }
     }
 }

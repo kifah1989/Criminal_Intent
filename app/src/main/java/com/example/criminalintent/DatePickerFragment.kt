@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.widget.DatePicker
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
+import com.google.firebase.Timestamp
 import java.util.*
 
 private const val ARG_DATE = "Date"
@@ -41,9 +42,9 @@ class DatePickerFragment : DialogFragment() {
     }
 
     companion object {
-        fun newInstance(date: Date, requestCode: String): DatePickerFragment {
+        fun newInstance(date: Timestamp, requestCode: String): DatePickerFragment {
             val args = Bundle().apply {
-                putSerializable(ARG_DATE, date)
+                putSerializable(ARG_DATE, date.toDate())
                 putString(ARG_REQUEST_CODE, requestCode)
             }
             return DatePickerFragment().apply {

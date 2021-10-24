@@ -1,14 +1,39 @@
 package com.example.criminalintent
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import kotlin.random.Random.Default.nextBoolean
 
 class CrimeListViewModel : ViewModel() {
     private val crimeRepository = CrimeRepository.get()
-    val crimeListLiveData = crimeRepository.getCrimes()
-    fun addCrime(crime: Crime) {
-        crimeRepository.addCrime(crime)
+    private val _crimes = MutableLiveData<List<Crime>>()
+    val crimeListLiveData: LiveData<List<Crime>> = _crimes
+
+
+    private val _error = MutableLiveData<String>()
+    val error: LiveData<String> = _error
+
+    fun fetchCrimes() {
+        crimeRepository.getCrimes{ crimes, error ->
+            if (error != null) {
+                _error.value = error
+            }
+            else {
+                _crimes.value = crimes
+            }
+        }
     }
-
-
+    fun addCrime(crime: Crime?) {
+        crime.apply {
+            this?.let {
+                crimeRepository.addCrime(it) { _, error ->
+                    if (error != null) {
+                        _error.value = error
+                    } else {
+                        fetchCrimes()
+                    }
+                }
+            }
+        }
+    }
 }

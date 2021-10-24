@@ -4,10 +4,9 @@ import android.app.Dialog
 import android.app.TimePickerDialog
 import android.os.Bundle
 import android.widget.TimePicker
-import androidx.core.view.get
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
-import java.sql.Time
+import com.google.firebase.Timestamp
 import java.util.*
 private const val ARG_TIME = "Date"
 private const val ARG_REQUEST_CODE_TIME = "requestCode"
@@ -39,9 +38,9 @@ class TimePickerFragment: DialogFragment() {
         )
     }
     companion object {
-        fun newInstance(time: Date, requestCode: String): TimePickerFragment {
+        fun newInstance(time: Timestamp, requestCode: String): TimePickerFragment {
             val args = Bundle().apply {
-                putSerializable(ARG_TIME, time)
+                putSerializable(ARG_TIME, time.toDate())
                 putString(ARG_REQUEST_CODE_TIME, requestCode)
             }
             return TimePickerFragment().apply {
