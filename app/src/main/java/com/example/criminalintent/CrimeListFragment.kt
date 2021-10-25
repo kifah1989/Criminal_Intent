@@ -2,6 +2,7 @@ package com.example.criminalintent
 
 import android.content.Context
 import android.os.Bundle
+import android.text.format.DateFormat
 import android.util.Log
 import android.view.*
 import android.widget.Button
@@ -123,8 +124,14 @@ class CrimeListFragment : Fragment() {
         fun bind(crime: Crime) {
             this.crime = crime
             titleTextView.text = this.crime.title
-            dateTextView.text = this.crime.date.toString()
-            solvedImageView.visibility = View.VISIBLE
+            val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date?.toDate())
+            val time = DateFormat.format("hh:mm", this.crime.time?.toDate())
+            dateTextView.text = "${date} ${time}"
+            solvedImageView.visibility = if (crime.isSolved!!) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
         }
         override fun onClick(v: View) {
             callbacks?.onCrimeSelected(crime.uid!!)
@@ -140,13 +147,16 @@ class CrimeListFragment : Fragment() {
         fun bind(crime: Crime) {
             this.crime = crime
             titleTextView.text = this.crime.title
-            val date = this.crime.date
-            val time = this.crime.time
+            val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date?.toDate())
+            val time = DateFormat.format("hh:mm", this.crime.time?.toDate())
             dateTextView.text = "${date} ${time}"
-            solvedImageView.visibility =
+            solvedImageView.visibility =if (this.crime.isSolved!!) {
                 View.VISIBLE
+            } else {
+                View.GONE
+            }
 
-            contactPoliceButton.isEnabled = true
+            contactPoliceButton.isEnabled = !crime.isSolved!!
             contactPoliceButton.setOnClickListener {
                 Toast.makeText(context, "calling 911", Toast. LENGTH_SHORT).show()
             }

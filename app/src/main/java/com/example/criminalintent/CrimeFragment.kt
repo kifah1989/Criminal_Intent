@@ -3,6 +3,7 @@ package com.example.criminalintent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.text.format.DateFormat
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -131,8 +132,8 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private fun updateUI() {
         Log.d(TAG, crime.toString())
         titleField.setText(crime.title)
-        dateButton.text = crime.date.toString()
-        timeButton.text = crime.time.toString()
+        dateButton.text = DateFormat.format("EEE dd MMM yyyy", this.crime.date?.toDate())
+        timeButton.text = DateFormat.format("hh:mm", this.crime.time?.toDate())
         solvedCheckBox.isChecked = crime.isSolved!!
         policeRequired.isChecked = crime.requiresPolice!!
 
