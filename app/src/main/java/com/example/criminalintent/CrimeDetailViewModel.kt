@@ -28,8 +28,7 @@ class CrimeDetailViewModel : ViewModel() {
 
 
     fun saveCrime(crime: Crime) {
-        crime.apply {
-            crimeRepository.addCrime(crime) { _, error ->
+            crimeRepository.updateCrime(crime) { _, error ->
                 if (error != null) {
                     _error.value = error
                 }
@@ -37,5 +36,5 @@ class CrimeDetailViewModel : ViewModel() {
                     Log.d(javaClass.simpleName, crime.toString())
                 }
             }
-        }    }
-}
+        }
+    }

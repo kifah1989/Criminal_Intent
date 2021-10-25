@@ -34,8 +34,8 @@ class CrimeRepository private constructor(context: Context) {
     fun getCrime(id: String, callback: (Crime?, String?)-> Unit) {
             dataBase.collection(CRIME_COLLECTION)
             .document(id)
-            .get()
-            .addOnSuccessListener { document ->
+                .get()
+                .addOnSuccessListener { document ->
                 val crime = Crime.fromDocument(document)
                 callback(crime, null)
             }
@@ -50,7 +50,7 @@ class CrimeRepository private constructor(context: Context) {
             .add(crime)
             .addOnSuccessListener {
                 callback(crime.apply {
-                    id = it.id }, null)
+                    uid = it.id }, null)
             }
             .addOnFailureListener { exception ->
                 callback(null, exception.message)
@@ -59,7 +59,7 @@ class CrimeRepository private constructor(context: Context) {
 
     fun updateCrime(crime: Crime, callback: (Crime?, String?) -> Unit) {
         dataBase.collection(CRIME_COLLECTION)
-            .document(crime.id).set(crime)
+            .document(crime.uid!!).set(crime)
 
             .addOnSuccessListener {
                 callback(crime, null)

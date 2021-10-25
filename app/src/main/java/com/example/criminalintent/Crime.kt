@@ -7,23 +7,23 @@ import java.util.*
 
 data class Crime(
     var
-    id: String = "",
+    uid: String? = null,
     var
-    title: String = "",
+    title: String? = null,
     var
-    date: Timestamp = Timestamp(Date()),
+    date: Timestamp?= null,
     var
-    time: Timestamp = Timestamp(Date()),
+    time: Timestamp?= null,
     var
-    isSolved: Boolean? = true,
+    isSolved: Boolean?= null,
     var
-    requiresPolice: Boolean = true
+    requiresPolice: Boolean?= null
 ){
     companion object {
 
         fun fromData(snapshot: QueryDocumentSnapshot): Crime {
             return Crime(
-                id = snapshot.data["id"] as String,
+                uid = snapshot.id,
                 title = snapshot.data["title"] as String,
                 date = snapshot.data["date"] as Timestamp,
                 time = snapshot.data["time"] as Timestamp,
@@ -36,11 +36,11 @@ data class Crime(
         fun fromDocument(doc: DocumentSnapshot): Crime {
 
             return Crime(
-                id = doc["id"] as String,
+                uid = doc.id,
                 title = doc["title"] as String,
                 date = doc["date"] as Timestamp,
                 time = doc["time"] as Timestamp,
-                isSolved = doc["isSolved"] as Boolean,
+                isSolved = doc["isSolved"] as? Boolean,
                 requiresPolice = doc["requiresPolice"] as Boolean
             )
         }

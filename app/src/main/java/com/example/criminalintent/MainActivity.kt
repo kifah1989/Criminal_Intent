@@ -40,15 +40,6 @@ class MainActivity: AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragm
             .commit()
     }
 
-    override fun newCrime() {
-        val fragment = CrimeFragment.newCrime()
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .addToBackStack(null)
-            .commit()
-    }
-
     override fun onLogin() {
         val fragment = CrimeListFragment()
         supportFragmentManager

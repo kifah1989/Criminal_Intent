@@ -25,7 +25,6 @@ class CrimeListFragment : Fragment() {
      */
     interface Callbacks {
         fun onCrimeSelected(crimeId: String)
-        fun newCrime()
     }
     private var callbacks: Callbacks? = null
     private lateinit var viewModel: CrimeListViewModel
@@ -67,12 +66,13 @@ class CrimeListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(this).get(CrimeListViewModel::class.java)
-
-        Log.d(javaClass.simpleName, "onView created")
+        viewModel.fetchCrimes()
         viewModel.crimeListLiveData.observe(viewLifecycleOwner, observerCrimes)
         addCrime.setOnClickListener{
+            val crime = Crime()
+            viewModel.addCrime(crime)
+            callbacks?.onCrimeSelected(crime.uid!!)
         }
-        viewModel.fetchCrimes()
     }
 
     override fun onDetach() {
@@ -86,13 +86,14 @@ class CrimeListFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.new_crime -> {
-                callbacks?.newCrime()
+                val crime = Crime()
+                viewModel.addCrime(crime)
+                callbacks?.onCrimeSelected(crime.uid!!)
                 true
             }
             else -> return super.onOptionsItemSelected(item)
         }
     }
-
 
     private fun updateUI(crimes: List<Crime>) {
 
@@ -102,6 +103,7 @@ class CrimeListFragment : Fragment() {
 
     private abstract class CrimeHolder(view: View) : RecyclerView.ViewHolder(view) {
 
+        var crime = Crime()
         val titleTextView: TextView = itemView.findViewById(R.id.crime_title)
         val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
     }
@@ -111,14 +113,13 @@ class CrimeListFragment : Fragment() {
             itemView.setOnClickListener(this)
         }
         fun bind(crime: Crime) {
-
-            titleTextView.text = crime.title
-            dateTextView.text = crime.date.toString()
+            this.crime = crime
+            titleTextView.text = this.crime.title
+            dateTextView.text = this.crime.date.toString()
             solvedImageView.visibility = View.VISIBLE
         }
-
-        override fun onClick(v: View?) {
-            TODO("Not yet implemented")
+        override fun onClick(v: View) {
+            callbacks?.onCrimeSelected(crime.uid!!)
         }
 
     }
@@ -129,10 +130,11 @@ class CrimeListFragment : Fragment() {
             itemView.setOnClickListener(this)
         }
         fun bind(crime: Crime) {
-            titleTextView.text = crime.title
-            val date = crime.date
-            val time = crime.time
-            dateTextView.text = "$date $time"
+            this.crime = crime
+            titleTextView.text = this.crime.title
+            val date = this.crime.date
+            val time = this.crime.time
+            dateTextView.text = "${date} ${time}"
             solvedImageView.visibility =
                 View.VISIBLE
 
@@ -141,9 +143,8 @@ class CrimeListFragment : Fragment() {
                 Toast.makeText(context, "calling 911", Toast. LENGTH_SHORT).show()
             }
         }
-
-        override fun onClick(v: View?) {
-            TODO("Not yet implemented")
+        override fun onClick(v: View) {
+            callbacks?.onCrimeSelected(crime.uid!!)
         }
     }
     private inner class CrimeAdapter(var crimes: List<Crime>) :
@@ -165,18 +166,8 @@ class CrimeListFragment : Fragment() {
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]
             when (holder) {
-                is NormalCrimeHolder -> {
-                    holder.bind(crime)
-                    holder.itemView.setOnClickListener{
-                        callbacks?.onCrimeSelected(crime.id)
-                    }
-                }
-                is SeriousCrimeHolder -> {
-                    holder.bind(crime)
-                    holder.itemView.setOnClickListener {
-                        callbacks?.onCrimeSelected(crime.id)
-                    }
-                }
+                is NormalCrimeHolder -> holder.bind(crime)
+                is SeriousCrimeHolder -> holder.bind(crime)
                 else -> throw IllegalArgumentException()
             }
         }
@@ -190,7 +181,7 @@ class CrimeListFragment : Fragment() {
     }
     object DiffCallback : DiffUtil.ItemCallback<Crime>() {
         override fun areItemsTheSame(oldItem: Crime, newItem: Crime): Boolean {
-            return oldItem.id == newItem.id
+            return oldItem.uid == newItem.uid
         }
         override fun areContentsTheSame(oldItem: Crime, newItem: Crime): Boolean {
             return oldItem == newItem

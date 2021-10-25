@@ -15,6 +15,7 @@ import androidx.fragment.app.FragmentResultListener
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.Timestamp
+import java.util.*
 
 private const val DIALOG_DATE = "Date"
 private const val DIALOG_TIME = "Time"
@@ -34,6 +35,9 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         crime = Crime()
+        val crimeId: String = arguments?.getSerializable(ARG_CRIME_ID) as String
+        viewModel = ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
+        viewModel.loadCrime(crimeId)
     }
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,16 +53,17 @@ class CrimeFragment : Fragment(), FragmentResultListener {
 
         return view
     }
-    private val observerCrime = Observer<Crime> {
-        Log.d(TAG, "Got crimes ${it}")
-        updateUI(it)
-
+    private val observerCrime = Observer<Crime> { crime ->
+        crime?.let {
+            this.crime = crime
+            updateUI()
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel = ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
         viewModel.crimeLiveData.observe(viewLifecycleOwner, observerCrime)
+
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
 
@@ -99,12 +104,12 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             }
         }
         dateButton.setOnClickListener {
-            DatePickerFragment.newInstance(crime.date, REQUEST_DATE)
+            DatePickerFragment.newInstance(crime.date!!, REQUEST_DATE)
                 .show(childFragmentManager, REQUEST_DATE)
 
         }
         timeButton.setOnClickListener{
-            TimePickerFragment.newInstance(crime.time, REQUEST_TIME)
+            TimePickerFragment.newInstance(crime.time!!, REQUEST_TIME)
                 .show(childFragmentManager, REQUEST_TIME)
         }
     }
@@ -113,21 +118,20 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             REQUEST_TIME -> {
                 Log.d(TAG, "received result for $requestCode")
                 crime.time = Timestamp(TimePickerFragment.getSelectedTime(result))
-                updateUI(crime)
             }
             REQUEST_DATE -> {
                 Log.d(TAG, "received result for $requestCode")
                 crime.date = Timestamp(DatePickerFragment.getSelectedDate(result))
-                updateUI(crime)
             }
         }
     }
     override fun onStop() {
         super.onStop()
-        viewModel.saveCrime(crime)
+        val updatedCrime = crime
+        viewModel.saveCrime(updatedCrime)
     }
 
-    private fun updateUI(crime: Crime) {
+    private fun updateUI() {
         titleField.setText(crime.title)
         dateButton.text = crime.date.toString()
         timeButton.text = crime.time.toString()
