@@ -24,11 +24,11 @@ data class Crime(
         fun fromData(snapshot: QueryDocumentSnapshot): Crime {
             return Crime(
                 uid = snapshot.id,
-                title = snapshot.data["title"] as String,
-                date = snapshot.data["date"] as Timestamp,
-                time = snapshot.data["time"] as Timestamp,
+                title = snapshot.data["title"] as? String,
+                date = snapshot.data["date"] as? Timestamp,
+                time = snapshot.data["time"] as? Timestamp,
                 isSolved = snapshot["isSolved"] as? Boolean,
-                requiresPolice = snapshot["requiresPolice"] as Boolean
+                requiresPolice = snapshot["requiresPolice"] as? Boolean
 
             )
         }
@@ -37,11 +37,11 @@ data class Crime(
 
             return Crime(
                 uid = doc.id,
-                title = doc["title"] as String,
-                date = doc["date"] as Timestamp,
-                time = doc["time"] as Timestamp,
+                title = doc["title"] as? String,
+                date = doc["date"] as? Timestamp,
+                time = doc["time"] as? Timestamp,
                 isSolved = doc["isSolved"] as? Boolean,
-                requiresPolice = doc["requiresPolice"] as Boolean
+                requiresPolice = doc["requiresPolice"] as? Boolean
             )
         }
     }
