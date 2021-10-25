@@ -2,7 +2,6 @@ package com.example.criminalintent
 
 import android.content.Context
 import android.os.Bundle
-import android.text.format.DateFormat
 import android.util.Log
 import android.view.*
 import android.widget.Button
@@ -24,7 +23,9 @@ class CrimeListFragment : Fragment() {
      * Required interface for hosting activities
      */
     interface Callbacks {
-        fun onCrimeSelected(crimeId: String)
+        fun onCrimeSelected(crimeId: String){
+
+        }
     }
     private var callbacks: Callbacks? = null
     private lateinit var viewModel: CrimeListViewModel
@@ -70,8 +71,11 @@ class CrimeListFragment : Fragment() {
         viewModel.crimeListLiveData.observe(viewLifecycleOwner, observerCrimes)
         addCrime.setOnClickListener{
             val crime = Crime()
-            viewModel.addCrime(crime)
-            callbacks?.onCrimeSelected(crime.uid!!)
+            viewModel.addCrime(crime) { success ->
+                        if (success) {
+                            callbacks?.onCrimeSelected(crime.uid!!)
+                        }
+            }
         }
     }
 
@@ -87,8 +91,12 @@ class CrimeListFragment : Fragment() {
         return when (item.itemId) {
             R.id.new_crime -> {
                 val crime = Crime()
-                viewModel.addCrime(crime)
-                callbacks?.onCrimeSelected(crime.uid!!)
+                viewModel.addCrime(crime) { success ->
+                    if (success) {
+                        callbacks?.onCrimeSelected(crime.uid!!)
+                    }
+                }
+
                 true
             }
             else -> return super.onOptionsItemSelected(item)

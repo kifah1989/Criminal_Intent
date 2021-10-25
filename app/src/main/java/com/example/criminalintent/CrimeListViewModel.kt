@@ -23,17 +23,15 @@ class CrimeListViewModel : ViewModel() {
             }
         }
     }
-    fun addCrime(crime: Crime?) {
-        crime.apply {
-            this?.let {
-                crimeRepository.addCrime(it) { _, error ->
+    fun addCrime(crime: Crime?, callback: (success: Boolean) -> Unit) {
+                crimeRepository.addCrime(crime!!) { _, error ->
                     if (error != null) {
                         _error.value = error
                     } else {
                         fetchCrimes()
                     }
+                    callback(true)
                 }
-            }
-        }
+
     }
 }
