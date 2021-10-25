@@ -7,17 +7,17 @@ import java.util.*
 
 data class Crime(
     var
-    uid: String? = null,
+    uid: String? = "",
     var
-    title: String? = null,
+    title: String? = "",
     var
-    date: Timestamp?= null,
+    date: Timestamp?= Timestamp(Date()),
     var
-    time: Timestamp?= null,
+    time: Timestamp?= Timestamp(Date()),
     var
-    isSolved: Boolean?= null,
+    isSolved: Boolean? = false,
     var
-    requiresPolice: Boolean?= null
+    requiresPolice: Boolean = false
 ){
     companion object {
 
@@ -27,8 +27,8 @@ data class Crime(
                 title = snapshot.data["title"] as? String,
                 date = snapshot.data["date"] as? Timestamp,
                 time = snapshot.data["time"] as? Timestamp,
-                isSolved = snapshot["isSolved"] as? Boolean,
-                requiresPolice = snapshot["requiresPolice"] as? Boolean
+                isSolved = snapshot.data["solved"] as? Boolean,
+                requiresPolice = snapshot.data["requiresPolice"] as Boolean
 
             )
         }
@@ -40,8 +40,8 @@ data class Crime(
                 title = doc["title"] as? String,
                 date = doc["date"] as? Timestamp,
                 time = doc["time"] as? Timestamp,
-                isSolved = doc["isSolved"] as? Boolean,
-                requiresPolice = doc["requiresPolice"] as? Boolean
+                isSolved = doc["solved"] as? Boolean,
+                requiresPolice = doc["requiresPolice"] as Boolean
             )
         }
     }

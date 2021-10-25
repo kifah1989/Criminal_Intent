@@ -48,22 +48,20 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         titleField = view.findViewById(R.id.crime_title) as EditText
         dateButton = view.findViewById(R.id.crime_date) as Button
         timeButton = view.findViewById(R.id.crime_time) as Button
-        solvedCheckBox = view.findViewById(R.id.crime_solved) as CheckBox
+        solvedCheckBox = view.findViewById(R.id.crime_solved_fr) as CheckBox
         policeRequired = view.findViewById(R.id.require_polic) as CheckBox
 
         return view
     }
     private val observerCrime = Observer<Crime> { crime ->
-        crime?.let {
             this.crime = crime
             updateUI()
-        }
+
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel.crimeLiveData.observe(viewLifecycleOwner, observerCrime)
-
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
 
@@ -127,22 +125,17 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     }
     override fun onStop() {
         super.onStop()
-        val updatedCrime = crime
-        viewModel.saveCrime(updatedCrime)
+        viewModel.saveCrime(crime)
     }
 
     private fun updateUI() {
+        Log.d(TAG, crime.toString())
         titleField.setText(crime.title)
         dateButton.text = crime.date.toString()
         timeButton.text = crime.time.toString()
-        solvedCheckBox.apply {
-            isChecked = false
-            jumpDrawablesToCurrentState()
-        }
-        policeRequired.apply {
-            isChecked = false
-            jumpDrawablesToCurrentState()
-        }
+        solvedCheckBox.isChecked = crime.isSolved!!
+        policeRequired.isChecked = crime.requiresPolice!!
+
     }
     companion object {
         fun newInstance(crimeId: String): CrimeFragment {

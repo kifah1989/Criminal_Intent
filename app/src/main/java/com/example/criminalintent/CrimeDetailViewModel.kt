@@ -33,7 +33,7 @@ class CrimeDetailViewModel : ViewModel() {
                     _error.value = error
                 }
                 else {
-                    Log.d(javaClass.simpleName, crime.toString())
+                    crimeIdLiveData.value = crime
                 }
             }
         }

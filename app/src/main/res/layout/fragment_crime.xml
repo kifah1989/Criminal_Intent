@@ -32,15 +32,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         tools:text="11:56 EST"/>
+
     <CheckBox
-        android:id="@+id/crime_solved"
+        android:id="@+id/crime_solved_fr"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/crime_solved_label"/>
+        android:text="@string/crime_solved_label" />
+
     <CheckBox
         android:id="@+id/require_polic"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/police_required"/>
+        android:text="@string/police_required" />
 
 </LinearLayout>
