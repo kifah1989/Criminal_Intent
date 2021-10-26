@@ -32,11 +32,12 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var timeButton: Button
     private lateinit var solvedCheckBox: CheckBox
     private lateinit var policeRequired: CheckBox
+    private lateinit var crimeId:String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         crime = Crime()
-        val crimeId: String = arguments?.getSerializable(ARG_CRIME_ID) as String
+        crimeId = arguments?.getSerializable(ARG_CRIME_ID) as String
         viewModel = ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
         viewModel.loadCrime(crimeId)
     }
@@ -65,7 +66,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         viewModel.crimeLiveData.observe(viewLifecycleOwner, observerCrime)
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
-
     }
     override fun onStart() {
         super.onStart()
@@ -116,11 +116,13 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         when(requestCode) {
             REQUEST_TIME -> {
                 Log.d(TAG, "received result for $requestCode")
-                crime.time = Timestamp(TimePickerFragment.getSelectedTime(result))
+                crime.time = TimePickerFragment.getSelectedTime(result)
+                updateUI()
             }
             REQUEST_DATE -> {
                 Log.d(TAG, "received result for $requestCode")
                 crime.date = Timestamp(DatePickerFragment.getSelectedDate(result))
+                updateUI()
             }
         }
     }
@@ -132,10 +134,10 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private fun updateUI() {
         Log.d(TAG, crime.toString())
         titleField.setText(crime.title)
-        dateButton.text = DateFormat.format("EEE dd MMM yyyy", this.crime.date?.toDate())
-        timeButton.text = DateFormat.format("hh:mm", this.crime.time?.toDate())
+        dateButton.text = DateFormat.format("EEE dd MMM yyyy", crime.date?.toDate())
+        timeButton.text = DateFormat.format("hh:mm", crime.time?.toDate())
         solvedCheckBox.isChecked = crime.isSolved!!
-        policeRequired.isChecked = crime.requiresPolice!!
+        policeRequired.isChecked = crime.requiresPolice
 
     }
     companion object {
@@ -146,9 +148,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             return CrimeFragment().apply {
                 arguments = args
             }
-        }
-        fun newCrime(): CrimeFragment {
-            return CrimeFragment()
         }
     }
 }

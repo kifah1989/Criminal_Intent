@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.room.Room
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.firestoreSettings
+import com.google.firebase.ktx.Firebase
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -11,8 +14,16 @@ private const val CRIME_COLLECTION = "Crimes"
 
 class CrimeRepository private constructor(context: Context) {
 
-    private val dataBase = FirebaseFirestore.getInstance()
+    private val dataBase = Firebase.firestore
+    private fun setup(){
+        val settings = firestoreSettings {
+            isPersistenceEnabled = true
+        }
+        dataBase.firestoreSettings = settings
+    }
+
     fun getCrimes(callback: (List<Crime>?, String?) -> Unit) {
+        setup()
             dataBase.collection(CRIME_COLLECTION)
                 .get()
                 .addOnSuccessListener { result ->
@@ -32,6 +43,7 @@ class CrimeRepository private constructor(context: Context) {
     }
 
     fun getCrime(id: String, callback: (Crime?, String?)-> Unit) {
+        setup()
             dataBase.collection(CRIME_COLLECTION)
             .document(id)
                 .get()
@@ -46,6 +58,7 @@ class CrimeRepository private constructor(context: Context) {
     }
 
     fun addCrime(crime: Crime, callback: (Crime?, String?) -> Unit) {
+        setup()
         dataBase.collection(CRIME_COLLECTION)
             .add(crime)
             .addOnSuccessListener {
@@ -58,9 +71,9 @@ class CrimeRepository private constructor(context: Context) {
     }
 
     fun updateCrime(crime: Crime, callback: (Crime?, String?) -> Unit) {
+        setup()
         dataBase.collection(CRIME_COLLECTION)
             .document(crime.uid!!).set(crime)
-
             .addOnSuccessListener {
                 callback(crime, null)
             }
