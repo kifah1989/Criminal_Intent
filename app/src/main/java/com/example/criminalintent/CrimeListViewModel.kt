@@ -32,6 +32,10 @@ class CrimeListViewModel : ViewModel() {
                     }
                     callback(true)
                 }
-
+    }
+    fun deleteCrime(uid: String){
+        crimeRepository.deleteBill(uid) {
+            fetchCrimes()
+        }
     }
 }

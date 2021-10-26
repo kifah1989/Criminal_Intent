@@ -82,6 +82,17 @@ class CrimeRepository private constructor(context: Context) {
             }
     }
 
+    fun deleteBill(uid: String, callback: (String?) -> Unit) {
+        dataBase.collection(CRIME_COLLECTION)
+            .document(uid)
+            .delete()
+            .addOnSuccessListener {
+            }
+            .addOnFailureListener { exception ->
+                callback(exception.message)
+            }
+    }
+
     companion object {
 
         private var INSTANCE: CrimeRepository? = null
