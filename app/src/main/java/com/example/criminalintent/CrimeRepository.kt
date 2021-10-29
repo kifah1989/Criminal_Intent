@@ -1,9 +1,11 @@
 package com.example.criminalintent
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.room.Room
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.ktx.Firebase
@@ -11,6 +13,7 @@ import java.util.*
 import java.util.concurrent.Executors
 
 private const val CRIME_COLLECTION = "Crimes"
+
 
 class CrimeRepository private constructor(context: Context) {
 

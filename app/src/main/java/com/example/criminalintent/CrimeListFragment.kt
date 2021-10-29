@@ -20,6 +20,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import java.util.ArrayList
 
 private const val TAG = "CrimeListFragment"
 
@@ -42,6 +45,10 @@ class CrimeListFragment : Fragment() {
     private lateinit var noCrimeText: TextView
     private lateinit var addCrime: Button
     private lateinit var auth: FirebaseAuth
+    private lateinit var firestoreDB: FirebaseFirestore
+
+    private lateinit var firestoreListener: ListenerRegistration
+
 
     private var adapter: CrimeAdapter? = CrimeAdapter(emptyList())
 
@@ -81,7 +88,23 @@ class CrimeListFragment : Fragment() {
         viewModel = ViewModelProvider(this).get(CrimeListViewModel::class.java)
         viewModel.fetchCrimes()
         viewModel.crimeListLiveData.observe(viewLifecycleOwner, observerCrimes)
+        firestoreDB = FirebaseFirestore.getInstance()
+        firestoreListener = firestoreDB.collection("Crimes")
+            .addSnapshotListener { documentSnapshots, e ->
+                if (e != null) {
+                    Log.e(TAG, "Listen failed!", e)
+                    return@addSnapshotListener
+                }
+                val crimeList: MutableList<Crime> = ArrayList<Crime>()
+                for (doc in documentSnapshots!!) {
+                    val crime = doc.toObject(Crime::class.java)
+                    crime.uid = doc.id
+                    crimeList.add(crime)
+                }
+                adapter = CrimeAdapter(crimeList)
+                crimeRecyclerView.adapter = adapter
 
+            }
 
     }
 
