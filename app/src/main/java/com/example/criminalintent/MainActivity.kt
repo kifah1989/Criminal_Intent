@@ -54,6 +54,10 @@ class MainActivity: AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragm
                 .commit()
         }
     }
+    override fun onDestroy() {
+        super.onDestroy()
+        firestoreListener.remove()
+    }
     override fun onCrimeSelected(crime: Crime) {
         val fragment = CrimeFragment.newInstance(crime)
         supportFragmentManager
