@@ -31,8 +31,17 @@ class MainActivity: AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragm
                 .commit()
         }
     }
-    override fun onCrimeSelected(crimeId: String) {
-        val fragment = CrimeFragment.newInstance(crimeId)
+    override fun onCrimeSelected(crime: Crime) {
+        val fragment = CrimeFragment.newInstance(crime)
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    override fun newCrime() {
+        val fragment = CrimeFragment.newCrime()
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.fragment_container, fragment)

@@ -15,26 +15,10 @@ class CrimeDetailViewModel : ViewModel() {
     val error: LiveData<String?> = _error
 
 
-    fun loadCrime(crimeId: String) {
-        crimeRepository.getCrime(crimeId) { crime, error ->
-            if (error != null) {
-                _error.value = error
-            }
-            else {
-                crimeIdLiveData.value = crime
-            }
-        }
-    }
-
-
     fun saveCrime(crime: Crime) {
-            crimeRepository.updateCrime(crime) { _, error ->
-                if (error != null) {
-                    _error.value = error
-                }
-                else {
-                    crimeIdLiveData.value = crime
-                }
-            }
+            crimeRepository.updateCrime(crime)
         }
+    fun addCrime(crime: Crime){
+        crimeRepository.addCrime(crime)
+    }
     }

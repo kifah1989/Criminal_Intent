@@ -15,81 +15,53 @@ private const val CRIME_COLLECTION = "Crimes"
 class CrimeRepository private constructor(context: Context) {
 
     private val dataBase = Firebase.firestore
-    private fun setup(){
-        val settings = firestoreSettings {
-            isPersistenceEnabled = true
-        }
-        dataBase.firestoreSettings = settings
-    }
 
     fun getCrimes(callback: (List<Crime>?, String?) -> Unit) {
-        setup()
             dataBase.collection(CRIME_COLLECTION)
                 .get()
-                .addOnSuccessListener { result ->
-
-                    val listOf = arrayListOf<Crime>()
-                    result.forEach {
-                        val crime = Crime.fromData(it)
-                        listOf.add(crime)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val crimeList: MutableList<Crime> = ArrayList<Crime>()
+                        for (doc in task.result!!){
+                            val crime: Crime = doc.toObject(Crime::class.java)
+                            crime.uid = doc.id
+                            crimeList.add(crime)
+                        }
+                        callback(crimeList, null)
                     }
-                    callback(listOf, null)
                 }
                 .addOnFailureListener { exception ->
                     callback(null, exception.message)
                 }
-
-
     }
-
-    fun getCrime(id: String, callback: (Crime?, String?)-> Unit) {
-        setup()
+    fun addCrime(crime: Crime) {
             dataBase.collection(CRIME_COLLECTION)
-            .document(id)
-                .get()
-                .addOnSuccessListener { document ->
-                val crime = Crime.fromDocument(document)
-                callback(crime, null)
-            }
-            .addOnFailureListener { exception ->
-                callback(null, exception.message)
-            }
-
-    }
-
-    fun addCrime(crime: Crime, callback: (Crime?, String?) -> Unit) {
-        setup()
-        dataBase.collection(CRIME_COLLECTION)
             .add(crime)
             .addOnSuccessListener {
-                callback(crime.apply {
-                    uid = it.id }, null)
             }
-            .addOnFailureListener { exception ->
-                callback(null, exception.message)
+            .addOnFailureListener {
             }
     }
 
-    fun updateCrime(crime: Crime, callback: (Crime?, String?) -> Unit) {
-        setup()
-        dataBase.collection(CRIME_COLLECTION)
-            .document(crime.uid!!).set(crime)
-            .addOnSuccessListener {
-                callback(crime, null)
-            }
-            .addOnFailureListener { exception ->
-                callback(null, exception.message)
-            }
+    fun updateCrime(crime: Crime) {
+        if(crime.uid != null){
+            dataBase.collection(CRIME_COLLECTION)
+                .document(crime.uid!!).set(crime)
+                .addOnSuccessListener {
+                }
+                .addOnFailureListener {
+                }
+        }
+
     }
 
-    fun deleteBill(uid: String, callback: (String?) -> Unit) {
+    fun deleteBill(uid: String) {
         dataBase.collection(CRIME_COLLECTION)
             .document(uid)
             .delete()
             .addOnSuccessListener {
             }
-            .addOnFailureListener { exception ->
-                callback(exception.message)
+            .addOnFailureListener {
             }
     }
 

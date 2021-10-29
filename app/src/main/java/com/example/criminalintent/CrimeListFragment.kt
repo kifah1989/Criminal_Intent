@@ -22,18 +22,22 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 
 private const val TAG = "CrimeListFragment"
+
 class CrimeListFragment : Fragment() {
     /**
      * Required interface for hosting activities
      */
     interface Callbacks {
-        fun onCrimeSelected(crimeId: String) {
+        fun onCrimeSelected(crime: Crime) {
+        }
+        fun newCrime(){
 
         }
     }
 
     private var callbacks: Callbacks? = null
     private lateinit var viewModel: CrimeListViewModel
+    private lateinit var viewModelDetail: CrimeDetailViewModel
     private lateinit var crimeRecyclerView: RecyclerView
     private lateinit var noCrimeText: TextView
     private lateinit var addCrime: Button
@@ -94,13 +98,7 @@ class CrimeListFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.new_crime -> {
-                val crime = Crime()
-                viewModel.addCrime(crime) { success ->
-                    if (success) {
-                        callbacks?.onCrimeSelected(crime.uid!!)
-                    }
-                }
-
+                callbacks?.newCrime()
                 true
             }
             else -> return super.onOptionsItemSelected(item)
@@ -108,17 +106,12 @@ class CrimeListFragment : Fragment() {
     }
 
     private fun updateUI(crimes: List<Crime>) {
-        if (crimes.isEmpty()){
-            noCrimeText.text= getText(R.string.no_crimes_available)
+        if (crimes.isEmpty()) {
+            noCrimeText.text = getText(R.string.no_crimes_available)
             addCrime.setOnClickListener {
-                val crime = Crime()
-                viewModel.addCrime(crime) { success ->
-                    if (success) {
-                        callbacks?.onCrimeSelected(crime.uid!!)
-                    }
-                }
+                callbacks?.newCrime()
             }
-        }else {
+        } else {
             noCrimeText.visibility =
                 View.GONE
             addCrime.visibility = View.GONE
@@ -147,17 +140,15 @@ class CrimeListFragment : Fragment() {
             val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date?.toDate())
             val time = DateFormat.format("hh:mm", this.crime.time?.toDate())
             dateTextView.text = "${date} ${time}"
-            solvedImageView.visibility = if (crime.isSolved!!) {
+            solvedImageView.visibility = if (this.crime.isSolved!!) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
         }
-
         override fun onClick(v: View) {
             alertDialog(crime)
         }
-
     }
 
     private inner class SeriousCrimeHolder(view: View) : CrimeHolder(view), View.OnClickListener {
@@ -241,10 +232,10 @@ class CrimeListFragment : Fragment() {
         val dialogitem = arrayOf<CharSequence>("Edit Data", "Delete Data")
         builder.setTitle(crime.title)
         builder.setItems(dialogitem) { _, i: Int ->
-            if(i == 0){
-                callbacks?.onCrimeSelected(crime.uid!!)
-            }else
-                if (i==1){
+            if (i == 0) {
+                callbacks?.onCrimeSelected(crime)
+            } else
+                if (i == 1) {
                     viewModel.deleteCrime(crime.uid!!)
                     viewModel.fetchCrimes()
                 }

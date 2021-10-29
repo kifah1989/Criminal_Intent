@@ -23,19 +23,10 @@ class CrimeListViewModel : ViewModel() {
             }
         }
     }
-    fun addCrime(crime: Crime?, callback: (success: Boolean) -> Unit) {
-                crimeRepository.addCrime(crime!!) { _, error ->
-                    if (error != null) {
-                        _error.value = error
-                    } else {
-                        fetchCrimes()
-                    }
-                    callback(true)
-                }
+    fun addCrime(crime: Crime?) {
+                crimeRepository.addCrime(crime!!)
     }
     fun deleteCrime(uid: String){
-        crimeRepository.deleteBill(uid) {
-            fetchCrimes()
-        }
+        crimeRepository.deleteBill(uid)
     }
 }
