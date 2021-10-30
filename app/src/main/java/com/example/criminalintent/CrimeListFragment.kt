@@ -34,7 +34,7 @@ class CrimeListFragment : Fragment() {
     private lateinit var noCrimeText: TextView
     private lateinit var addCrime: Button
     private lateinit var auth: FirebaseAuth
-    private lateinit var firestoreListener: ListenerRegistration
+    private lateinit var fireStoreListener: ListenerRegistration
     private var adapter: CrimeAdapter? = CrimeAdapter(emptyList())
 
     /**
@@ -43,20 +43,24 @@ class CrimeListFragment : Fragment() {
     interface Callbacks {
         fun onCrimeSelected(crime: Crime) {
         }
-        fun newCrime(){
+
+        fun newCrime() {
 
         }
     }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         callbacks = context as Callbacks?
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
         auth = FirebaseAuth.getInstance()
         dataBase = Firebase.firestore
     }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -68,10 +72,12 @@ class CrimeListFragment : Fragment() {
         addCrime = view.findViewById(R.id.add_crime) as Button
         return view
     }
+
     private val observerCrimes = Observer<List<Crime>> {
         Log.d(TAG, "Got crimes ${it.size}")
         updateUI(it)
     }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(this).get(CrimeListViewModel::class.java)
@@ -79,14 +85,17 @@ class CrimeListFragment : Fragment() {
         viewModel.crimeListLiveData.observe(viewLifecycleOwner, observerCrimes)
         crimeRecyclerView.layoutManager = LinearLayoutManager(context)
     }
+
     override fun onDetach() {
         super.onDetach()
         callbacks = null
     }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.fragment_crime_list, menu)
     }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.new_crime -> {
@@ -96,6 +105,7 @@ class CrimeListFragment : Fragment() {
             else -> return super.onOptionsItemSelected(item)
         }
     }
+
     private fun updateUI(crimes: List<Crime>) {
         if (crimes.isEmpty()) {
             noCrimeText.text = getText(R.string.no_crimes_available)
@@ -107,7 +117,7 @@ class CrimeListFragment : Fragment() {
                 View.GONE
             addCrime.visibility = View.GONE
         }
-        firestoreListener = dataBase.collection("Crimes")
+        fireStoreListener = dataBase.collection("Crimes")
             .addSnapshotListener { documentSnapshots, e ->
                 if (e != null) {
                     Log.e(TAG, "Listen failed!", e)
@@ -123,32 +133,38 @@ class CrimeListFragment : Fragment() {
                 crimeRecyclerView.adapter = adapter
             }
     }
+
     private abstract class CrimeHolder(view: View) : RecyclerView.ViewHolder(view) {
         var crime = Crime()
         val titleTextView: TextView = itemView.findViewById(R.id.crime_title)
         val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
     }
+
     private inner class NormalCrimeHolder(view: View) : CrimeHolder(view), View.OnClickListener {
         val solvedImageView: ImageView = itemView.findViewById(R.id.crime_solved)
+
         init {
             itemView.setOnClickListener(this)
         }
+
         fun bind(crime: Crime) {
             this.crime = crime
             titleTextView.text = this.crime.title
-            val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date?.toDate())
-            val time = DateFormat.format("hh:mm", this.crime.time?.toDate())
-            dateTextView.text = "${date} ${time}"
-            solvedImageView.visibility = if (this.crime.isSolved!!) {
+            val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date.toDate())
+            val time = DateFormat.format("hh:mm", this.crime.time.toDate())
+            dateTextView.text = getString(R.string.date_time_format_text, date, time)
+            solvedImageView.visibility = if (this.crime.isSolved) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
         }
+
         override fun onClick(v: View) {
             alertDialog(crime)
         }
     }
+
     private inner class SeriousCrimeHolder(view: View) : CrimeHolder(view), View.OnClickListener {
         val solvedImageView: ImageView = itemView.findViewById(R.id.crime_solved)
         val contactPoliceButton: Button = itemView.findViewById(R.id.call_police)
@@ -156,26 +172,29 @@ class CrimeListFragment : Fragment() {
         init {
             itemView.setOnClickListener(this)
         }
+
         fun bind(crime: Crime) {
             this.crime = crime
             titleTextView.text = this.crime.title
-            val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date?.toDate())
-            val time = DateFormat.format("hh:mm", this.crime.time?.toDate())
-            dateTextView.text = "${date} ${time}"
-            solvedImageView.visibility = if (this.crime.isSolved!!) {
+            val date = DateFormat.format("EEE dd MMM yyyy", this.crime.date.toDate())
+            val time = DateFormat.format("hh:mm", this.crime.time.toDate())
+            dateTextView.text = getString(R.string.date_time_format_text, date, time)
+            solvedImageView.visibility = if (this.crime.isSolved) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
-            contactPoliceButton.isEnabled = !crime.isSolved!!
+            contactPoliceButton.isEnabled = !crime.isSolved
             contactPoliceButton.setOnClickListener {
                 Toast.makeText(context, "calling 911", Toast.LENGTH_SHORT).show()
             }
         }
+
         override fun onClick(v: View) {
             alertDialog(crime)
         }
     }
+
     private inner class CrimeAdapter(var crimes: List<Crime>) :
         ListAdapter<Crime, CrimeHolder>(DiffCallback) {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int)
@@ -186,11 +205,16 @@ class CrimeListFragment : Fragment() {
                     NormalCrimeHolder(view)
                 }
                 else -> {
-                    val view = layoutInflater.inflate(R.layout.list_item_require_police_crime, parent, false)
+                    val view = layoutInflater.inflate(
+                        R.layout.list_item_require_police_crime,
+                        parent,
+                        false
+                    )
                     SeriousCrimeHolder(view)
                 }
             }
         }
+
         override fun getItemCount() = crimes.size
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]
@@ -200,6 +224,7 @@ class CrimeListFragment : Fragment() {
                 else -> throw IllegalArgumentException()
             }
         }
+
         override fun getItemViewType(position: Int): Int {
             val crime = crimes[position]
             return when (crime.requiresPolice) {
@@ -208,24 +233,27 @@ class CrimeListFragment : Fragment() {
             }
         }
     }
+
     object DiffCallback : DiffUtil.ItemCallback<Crime>() {
         override fun areItemsTheSame(oldItem: Crime, newItem: Crime): Boolean {
             return oldItem.uid == newItem.uid
         }
+
         override fun areContentsTheSame(oldItem: Crime, newItem: Crime): Boolean {
             return oldItem == newItem
         }
     }
+
     private fun alertDialog(crime: Crime) {
         val builder = AlertDialog.Builder(requireContext())
-        val dialogitem = arrayOf<CharSequence>("Edit Data", "Delete Data")
+        val dialogItem = arrayOf<CharSequence>("Edit Data", "Delete Data")
         builder.setTitle(crime.title)
-        builder.setItems(dialogitem) { _, i: Int ->
+        builder.setItems(dialogItem) { _, i: Int ->
             if (i == 0) {
                 callbacks?.onCrimeSelected(crime)
             } else
                 if (i == 1) {
-                    viewModel.deleteCrime(crime.uid!!)
+                    viewModel.deleteCrime(crime.uid)
                     viewModel.fetchCrimes()
                 }
         }

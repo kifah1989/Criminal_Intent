@@ -22,7 +22,6 @@ class DatePickerFragment : DialogFragment() {
                 val result = Bundle().apply {
                     putSerializable(RESULT_DATE_KEY, resultDate)
                 }
-
                 val resultRequestCode = requireArguments().getString(ARG_REQUEST_CODE, "")
                 setFragmentResult(resultRequestCode, result)
             }
@@ -51,7 +50,7 @@ class DatePickerFragment : DialogFragment() {
                 arguments = args
             }
         }
-        fun getSelectedDate(result: Bundle) = result.getSerializable(RESULT_DATE_KEY) as Date
 
+        fun getSelectedDate(result: Bundle) = result.getSerializable(RESULT_DATE_KEY) as Date
     }
 }

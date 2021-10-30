@@ -1,29 +1,20 @@
 package com.example.criminalintent
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import java.util.ArrayList
 
-private const val TAG = "MainActivity"
-
-class MainActivity: AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragment.Callbacks {
+class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragment.Callbacks {
     private lateinit var logOutBtn: Button
     private lateinit var auth: FirebaseAuth
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         auth = FirebaseAuth.getInstance()
-
         logOutBtn = findViewById(R.id.logOut_btn)
-        logOutBtn.setOnClickListener{
+        logOutBtn.setOnClickListener {
             logOutBtn.visibility = View.INVISIBLE
             auth.signOut()
             onLogOut()
@@ -73,5 +64,4 @@ class MainActivity: AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragm
             .replace(R.id.fragment_container, fragment)
             .commit()
     }
-
 }

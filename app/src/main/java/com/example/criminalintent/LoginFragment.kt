@@ -2,22 +2,21 @@ package com.example.criminalintent
 
 import android.content.Context
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.fragment.app.Fragment
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import javax.security.auth.callback.Callback
 
 class LoginFragment : Fragment() {
     interface Callbacks {
         fun onLogin()
         fun onLogOut()
     }
+
     private var callbacks: Callbacks? = null
     private lateinit var emailField: EditText
     private lateinit var passwordField: EditText
@@ -27,6 +26,7 @@ class LoginFragment : Fragment() {
         super.onAttach(context)
         callbacks = context as Callbacks?
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         auth = FirebaseAuth.getInstance()
@@ -47,10 +47,9 @@ class LoginFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         val currentUser = auth.currentUser
-        if(currentUser!=null){
+        if (currentUser != null) {
             callbacks?.onLogin()
         }
-
     }
 
     override fun onViewCreated(
@@ -68,24 +67,23 @@ class LoginFragment : Fragment() {
                 passwordField.text.toString()
             )
                 .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            Toast.makeText(
-                                context,
-                                "log in successful",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            val currentUser = auth.currentUser
-                            if(currentUser!=null){
-                                callbacks?.onLogin()
-                            }
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "Authentication failed.",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                    if (task.isSuccessful) {
+                        Toast.makeText(
+                            context,
+                            "log in successful",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        val currentUser = auth.currentUser
+                        if (currentUser != null) {
+                            callbacks?.onLogin()
                         }
-
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Authentication failed.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
         }
     }
@@ -94,6 +92,7 @@ class LoginFragment : Fragment() {
         super.onDetach()
         callbacks = null
     }
+
     companion object {
         fun newInstance(): LoginFragment {
             return LoginFragment()

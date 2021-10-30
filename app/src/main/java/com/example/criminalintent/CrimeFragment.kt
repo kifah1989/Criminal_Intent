@@ -71,8 +71,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         solvedCheckBox = view.findViewById(R.id.crime_solved_fr) as CheckBox
         policeRequired = view.findViewById(R.id.require_polic) as CheckBox
         reportButton = view.findViewById(R.id.crime_report) as Button
-
-
         return view
     }
 
@@ -120,7 +118,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         dateButton.setOnClickListener {
             DatePickerFragment.newInstance(Timestamp(Date()), REQUEST_DATE)
                 .show(childFragmentManager, REQUEST_DATE)
-
         }
         timeButton.setOnClickListener{
             TimePickerFragment.newInstance(Timestamp(Date()), REQUEST_TIME)
@@ -146,9 +143,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 startActivity(intent)
                 parentFragmentManager.popBackStack()
             }
-
         }
-
     }
     override fun onFragmentResult(requestCode: String, result: Bundle) {
         when(requestCode) {
@@ -164,42 +159,36 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             }
         }
     }
-    override fun onStop() {
-        super.onStop()
-
-    }
-
     private fun updateUI() {
-        titleField.setText(crimeTitle!!)
-        dateButton.text = DateFormat.format("EEE dd MMM yyyy", crimeDate!!)
-        timeButton.text = DateFormat.format("hh:mm", crimeTime!!)
-        solvedCheckBox.isChecked = crimeSolved!!
-        policeRequired.isChecked = crimeRequirePolice!!
+        titleField.setText(crimeTitle)
+        dateButton.text = DateFormat.format("EEE dd MMM yyyy", crimeDate)
+        timeButton.text = DateFormat.format("hh:mm", crimeTime)
+        solvedCheckBox.isChecked = crimeSolved
+        policeRequired.isChecked = crimeRequirePolice
     }
-
-
     private fun getCrimeReport(): String {
-        val solvedString = if (crimeSolved!!) {
+        val solvedString = if (crimeSolved) {
             getString(R.string.crime_report_solved)
         } else {
             getString(R.string.crime_report_unsolved)
         }
         val dateString = DateFormat.format(DATE_FORMAT, crimeDate).toString()
-        val suspect = if (crimeSuspect!!.isBlank()) {
+        val timeString = DateFormat.format(TIME_FORMAT, crimeTime).toString()
+        val suspect = if (crimeSuspect.isBlank()) {
             getString(R.string.crime_report_no_suspect)
         } else {
             getString(R.string.crime_report_suspect, crimeSuspect)
         }
         return getString(R.string.crime_report,
-            crimeTitle, dateString, solvedString, suspect)
+            crimeTitle, dateString, timeString, solvedString, suspect)
     }
     companion object {
         fun newInstance(crime: Crime): CrimeFragment {
             val args = Bundle().apply {
                 putSerializable(ARG_CRIME_ID, crime.uid)
                 putSerializable("CrimeTitle", crime.title)
-                putSerializable("CrimeDate", crime.date?.toDate())
-                putSerializable("CrimeTime", crime.time?.toDate())
+                putSerializable("CrimeDate", crime.date.toDate())
+                putSerializable("CrimeTime", crime.time.toDate())
                 putSerializable("CrimeSolved", crime.isSolved)
                 putSerializable("CrimeRequirePolice", crime.requiresPolice)
                 putSerializable("CrimeSuspect", crime.suspect)

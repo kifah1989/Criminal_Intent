@@ -1,44 +1,37 @@
 package com.example.criminalintent
 
-import android.content.Context
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.room.Room
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.ktx.Firebase
 import java.util.*
-import java.util.concurrent.Executors
 
 private const val CRIME_COLLECTION = "Crimes"
 
 
-class CrimeRepository private constructor(context: Context) {
+class CrimeRepository private constructor() {
 
     private val dataBase = Firebase.firestore
 
     fun getCrimes(callback: (List<Crime>?, String?) -> Unit) {
-            dataBase.collection(CRIME_COLLECTION)
-                .get()
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val crimeList: MutableList<Crime> = ArrayList<Crime>()
-                        for (doc in task.result!!){
-                            val crime: Crime = doc.toObject(Crime::class.java)
-                            crime.uid = doc.id
-                            crimeList.add(crime)
-                        }
-                        callback(crimeList, null)
+        dataBase.collection(CRIME_COLLECTION)
+            .get()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val crimeList: MutableList<Crime> = ArrayList<Crime>()
+                    for (doc in task.result!!) {
+                        val crime: Crime = doc.toObject(Crime::class.java)
+                        crime.uid = doc.id
+                        crimeList.add(crime)
                     }
+                    callback(crimeList, null)
                 }
-                .addOnFailureListener { exception ->
-                    callback(null, exception.message)
-                }
+            }
+            .addOnFailureListener { exception ->
+                callback(null, exception.message)
+            }
     }
+
     fun addCrime(crime: Crime) {
-            dataBase.collection(CRIME_COLLECTION)
+        dataBase.collection(CRIME_COLLECTION)
             .add(crime)
             .addOnSuccessListener {
             }
@@ -47,15 +40,12 @@ class CrimeRepository private constructor(context: Context) {
     }
 
     fun updateCrime(crime: Crime) {
-        if(crime.uid != null){
-            dataBase.collection(CRIME_COLLECTION)
-                .document(crime.uid!!).set(crime)
-                .addOnSuccessListener {
-                }
-                .addOnFailureListener {
-                }
-        }
-
+        dataBase.collection(CRIME_COLLECTION)
+            .document(crime.uid).set(crime)
+            .addOnSuccessListener {
+            }
+            .addOnFailureListener {
+            }
     }
 
     fun deleteBill(uid: String) {
@@ -71,9 +61,9 @@ class CrimeRepository private constructor(context: Context) {
     companion object {
 
         private var INSTANCE: CrimeRepository? = null
-        fun initialize(context: Context) {
+        fun initialize() {
             if (INSTANCE == null) {
-                INSTANCE = CrimeRepository(context)
+                INSTANCE = CrimeRepository()
             }
         }
 

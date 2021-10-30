@@ -10,10 +10,19 @@ class Crime {
     var time: Timestamp = Timestamp(Date())
     var isSolved: Boolean = false
     var requiresPolice: Boolean = false
-    var  suspect: String = ""
+    var suspect: String = ""
+
     constructor()
 
-    constructor(uid: String, title: String, date: Timestamp, time: Timestamp, isSolved: Boolean, requiresPolice: Boolean, suspect: String){
+    constructor(
+        uid: String,
+        title: String,
+        date: Timestamp,
+        time: Timestamp,
+        isSolved: Boolean,
+        requiresPolice: Boolean,
+        suspect: String
+    ) {
         this.uid = uid
         this.title = title
         this.date = date
@@ -23,7 +32,14 @@ class Crime {
         this.suspect = suspect
     }
 
-    constructor(title: String, date: Timestamp, time: Timestamp, isSolved: Boolean, requiresPolice: Boolean, suspect: String){
+    constructor(
+        title: String,
+        date: Timestamp,
+        time: Timestamp,
+        isSolved: Boolean,
+        requiresPolice: Boolean,
+        suspect: String
+    ) {
         this.title = title
         this.date = date
         this.time = time

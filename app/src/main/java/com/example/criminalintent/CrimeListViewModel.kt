@@ -8,23 +8,19 @@ class CrimeListViewModel : ViewModel() {
     private val crimeRepository = CrimeRepository.get()
     private val _crimes = MutableLiveData<List<Crime>>()
     val crimeListLiveData: LiveData<List<Crime>> = _crimes
-
-
     private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
-
 
     fun fetchCrimes() {
-        crimeRepository.getCrimes{ crimes, error ->
+        crimeRepository.getCrimes { crimes, error ->
             if (error != null) {
                 _error.value = error
-            }
-            else {
+            } else {
                 _crimes.value = crimes
             }
         }
     }
-    fun deleteCrime(uid: String){
+
+    fun deleteCrime(uid: String) {
         crimeRepository.deleteBill(uid)
     }
 }
