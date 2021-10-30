@@ -16,28 +16,12 @@ private const val TAG = "MainActivity"
 class MainActivity: AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragment.Callbacks {
     private lateinit var logOutBtn: Button
     private lateinit var auth: FirebaseAuth
-    private lateinit var firestoreListener: ListenerRegistration
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         auth = FirebaseAuth.getInstance()
-        val dataBase = Firebase.firestore
 
-
-        firestoreListener = dataBase.collection("Crimes")
-            .addSnapshotListener { documentSnapshots, e ->
-                if (e != null) {
-                    Log.e(TAG, "Listen failed!", e)
-                    return@addSnapshotListener
-                }
-                val crimeList: MutableList<Crime> = ArrayList<Crime>()
-                for (doc in documentSnapshots!!) {
-                    val note = doc.toObject(Crime::class.java)
-                    note.uid = doc.id
-                    crimeList.add(note)
-                }
-            }
         logOutBtn = findViewById(R.id.logOut_btn)
         logOutBtn.setOnClickListener{
             logOutBtn.visibility = View.INVISIBLE
@@ -54,10 +38,7 @@ class MainActivity: AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragm
                 .commit()
         }
     }
-    override fun onDestroy() {
-        super.onDestroy()
-        firestoreListener.remove()
-    }
+
     override fun onCrimeSelected(crime: Crime) {
         val fragment = CrimeFragment.newInstance(crime)
         supportFragmentManager

@@ -13,6 +13,7 @@ class CrimeListViewModel : ViewModel() {
     private val _error = MutableLiveData<String>()
     val error: LiveData<String> = _error
 
+
     fun fetchCrimes() {
         crimeRepository.getCrimes{ crimes, error ->
             if (error != null) {
@@ -22,9 +23,6 @@ class CrimeListViewModel : ViewModel() {
                 _crimes.value = crimes
             }
         }
-    }
-    fun addCrime(crime: Crime?) {
-                crimeRepository.addCrime(crime!!)
     }
     fun deleteCrime(uid: String){
         crimeRepository.deleteBill(uid)
