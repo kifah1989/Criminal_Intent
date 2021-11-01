@@ -11,6 +11,7 @@ class Crime {
     var isSolved: Boolean = false
     var requiresPolice: Boolean = false
     var suspect: String = ""
+    var suspectPhoneNumber: String = ""
 
     constructor()
 
@@ -21,7 +22,8 @@ class Crime {
         time: Timestamp,
         isSolved: Boolean,
         requiresPolice: Boolean,
-        suspect: String
+        suspect: String,
+        sPhone: String
     ) {
         this.uid = uid
         this.title = title
@@ -30,6 +32,7 @@ class Crime {
         this.isSolved = isSolved
         this.requiresPolice = requiresPolice
         this.suspect = suspect
+        this.suspectPhoneNumber = sPhone
     }
 
     constructor(
@@ -38,7 +41,9 @@ class Crime {
         time: Timestamp,
         isSolved: Boolean,
         requiresPolice: Boolean,
-        suspect: String
+        suspect: String,
+        sPhone: String
+
     ) {
         this.title = title
         this.date = date
@@ -46,5 +51,6 @@ class Crime {
         this.isSolved = isSolved
         this.requiresPolice = requiresPolice
         this.suspect = suspect
+        this.suspectPhoneNumber = sPhone
     }
 }

@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.criminalintent">
-
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PICK" />
+            <data android:mimeType="*/*" />
+        </intent>
+    </queries>
     <application
         android:name=".CriminalIntentApplication"
         android:allowBackup="true"
