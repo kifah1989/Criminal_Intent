@@ -51,6 +51,6 @@ class DatePickerFragment : DialogFragment() {
             }
         }
 
-        fun getSelectedDate(result: Bundle) = result.getSerializable(RESULT_DATE_KEY) as Date
+        fun getSelectedDate(result: Bundle) = Timestamp(result.getSerializable(RESULT_DATE_KEY) as Date)
     }
 }

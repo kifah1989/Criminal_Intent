@@ -1,29 +1,43 @@
 package com.example.criminalintent
 
 import android.app.Activity
+import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.format.DateFormat
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
+import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentResultListener
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import com.google.firebase.Timestamp
+import java.io.File
 import java.util.*
+import android.widget.RelativeLayout
+
+import android.content.DialogInterface
+import android.graphics.Color
+import android.graphics.Picture
+
+import android.graphics.drawable.ColorDrawable
+import android.view.*
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.FragmentManager
+
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
 private const val TIME_FORMAT = "hh:mm"
@@ -32,19 +46,15 @@ private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
 private const val TAG = "CrimeFragment"
 private const val REQUEST_CONTACT = 1
+private const val DIALOG_PHOTO = "DialogPhoto"
 
 class CrimeFragment : Fragment(), FragmentResultListener {
+    private lateinit var photoFile: File
     private lateinit var data: Intent
+    private lateinit var photoData: Intent
     private lateinit var suspectNameResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var crimeId: String
-    private lateinit var crimeTitle: String
-    private lateinit var crimeDate: Date
-    private lateinit var crimeTime: Date
-    private var crimeSolved: Boolean = false
-    private var crimeRequirePolice: Boolean = false
-    private lateinit var crimeSuspect: String
-    private lateinit var sphone: String
-    private lateinit var viewModel: CrimeDetailViewModel
+    private lateinit var crimePhotoResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var crime: Crime
     private lateinit var titleField: EditText
     private lateinit var dateButton: Button
     private lateinit var timeButton: Button
@@ -53,29 +63,39 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var reportButton: Button
     private lateinit var suspectButton: Button
     private lateinit var callSuspect: Button
+    private lateinit var photoButton: ImageButton
+    private lateinit var photoView: ImageView
+    private lateinit var photoUri: Uri
+    private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
+        ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
-        crimeId = ""
-        crimeDate = Date()
-        crimeTime = Date()
-        crimeTitle = ""
-        crimeSolved = false
-        crimeRequirePolice = false
-        crimeSuspect = ""
-        sphone = ""
+        crime = Crime()
         if (arguments != null) {
-            crimeId = arguments?.getSerializable(ARG_CRIME_ID) as String
-            crimeTitle = arguments?.getSerializable("CrimeTitle") as String
-            crimeDate = arguments?.getSerializable("CrimeDate") as Date
-            crimeTime = arguments?.getSerializable("CrimeTime") as Date
-            crimeSolved = arguments?.getSerializable("CrimeSolved") as Boolean
-            crimeRequirePolice = arguments?.getSerializable("CrimeRequirePolice") as Boolean
-            crimeSuspect = arguments?.getSerializable("CrimeSuspect") as String
-            sphone = arguments?.getSerializable("sphone") as String
-
+            crime.uid = arguments?.getSerializable(ARG_CRIME_ID) as String
+            crime.title = arguments?.getSerializable("CrimeTitle") as String
+            crime.date = Timestamp(arguments?.getSerializable("CrimeDate") as Date)
+            crime.time = Timestamp(arguments?.getSerializable("CrimeTime") as Date)
+            crime.isSolved = arguments?.getSerializable("CrimeSolved") as Boolean
+            crime.requiresPolice = arguments?.getSerializable("CrimeRequirePolice") as Boolean
+            crime.suspect = arguments?.getSerializable("CrimeSuspect") as String
+            crime.suspectPhoneNumber = arguments?.getSerializable("sphone") as String
+            crime.photoFileName = arguments?.getSerializable("photoFileName") as String
         }
+        crimePhotoResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { photoResult ->
+                when {
+                    photoResult.resultCode != Activity.RESULT_OK ->
+                        return@registerForActivityResult
+                    photoResult.data != null -> {
+                        photoData = photoResult.data!!
+                        requireActivity().revokeUriPermission(photoUri,
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    }
+                }
+            }
         suspectNameResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 when {
@@ -100,13 +120,13 @@ class CrimeFragment : Fragment(), FragmentResultListener {
 
                             it.moveToFirst()
                             val suspect = it.getString(0)
-                            crimeSuspect = suspect
+                            crime.suspect = suspect
                             suspectButton.text = suspect
                         }
 
                         // I created another Cursor to get the suspect Id
                         val cursorId = requireActivity().contentResolver
-                            .query(contactUri!!, queryFieldsId, null, null, null)
+                            .query(contactUri, queryFieldsId, null, null, null)
                         cursorId?.use {
                             if (it.count == 0) {
                                 return@registerForActivityResult
@@ -121,23 +141,31 @@ class CrimeFragment : Fragment(), FragmentResultListener {
 
                             // phoneNumberQueryFields: a List to return the PhoneNumber Column Only
 
-                            val phoneNumberQueryFields = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                            val phoneNumberQueryFields =
+                                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
 
-                            // phoneWhereClause: A filter declaring which rows to return, formatted as an SQL WHERE clause (excluding the WHERE itself)
-                            val phoneWhereClause = "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?"
+                            // phoneWhereClause: A filter declaring which rows to return, formatted as an SQL WHERE clause                                  (excluding the WHERE itself)
+                            val phoneWhereClause =
+                                "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?"
 
                             // This val replace the question mark in the phoneWhereClause  val
                             val phoneQueryParameters = arrayOf(contactId)
 
                             val phoneCursor = requireActivity().contentResolver
-                                .query(phoneURI, phoneNumberQueryFields, phoneWhereClause, phoneQueryParameters, null )
+                                .query(
+                                    phoneURI,
+                                    phoneNumberQueryFields,
+                                    phoneWhereClause,
+                                    phoneQueryParameters,
+                                    null
+                                )
 
                             phoneCursor?.use { cursorPhone ->
                                 cursorPhone.moveToFirst()
                                 val phoneNumValue = cursorPhone.getString(0)
 
                                 // after retrieving the phone number i put it in the crime.phone
-                                sphone = phoneNumValue
+                                crime.suspectPhoneNumber = phoneNumValue
                                 updateUI()
                             }
                         }
@@ -160,12 +188,21 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         reportButton = view.findViewById(R.id.crime_report) as Button
         suspectButton = view.findViewById(R.id.crime_suspect) as Button
         callSuspect = view.findViewById(R.id.crime_call_suspect) as Button
+        photoButton = view.findViewById(R.id.crime_camera) as ImageButton
+        photoView = view.findViewById(R.id.crime_photo) as ImageView
 
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        photoFile = crimeDetailViewModel.getPhotoFile(crime.photoFileName)
+        photoUri = FileProvider.getUriForFile(
+            requireActivity(),
+            "com.example.criminalintent.fileprovider",
+            photoFile
+        )
+
         updateUI()
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
@@ -189,7 +226,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 before: Int,
                 count: Int
             ) {
-                crimeTitle = sequence.toString()
+                crime.title = sequence.toString()
             }
 
             override fun afterTextChanged(sequence: Editable?) {
@@ -199,12 +236,12 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         titleField.addTextChangedListener(titleWatcher)
         solvedCheckBox.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                crimeSolved = isChecked
+                crime.isSolved = isChecked
             }
         }
         policeRequired.apply {
             setOnCheckedChangeListener { _, isChecked ->
-                crimeRequirePolice = isChecked
+                crime.requiresPolice = isChecked
             }
         }
         dateButton.setOnClickListener {
@@ -216,32 +253,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 .show(childFragmentManager, REQUEST_TIME)
         }
         reportButton.setOnClickListener {
-            if (crimeTitle.isNotEmpty()) {
-                if (crimeId.isNotEmpty()) {
-                    val crime = Crime(
-                        crimeId,
-                        crimeTitle,
-                        Timestamp(crimeDate),
-                        Timestamp(crimeTime),
-                        crimeSolved,
-                        crimeRequirePolice,
-                        crimeSuspect,
-                        sphone
-                    )
-                    viewModel.saveCrime(crime)
-                } else {
-                    val crime = Crime(
-                        crimeTitle,
-                        Timestamp(crimeDate),
-                        Timestamp(crimeTime),
-                        crimeSolved,
-                        crimeRequirePolice,
-                        crimeSuspect,
-                        sphone
-                    )
-                    viewModel.addCrime(crime)
-                }
-            }
+            crimeDetailViewModel.saveCrime(crime)
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, getCrimeReport())
@@ -255,12 +267,14 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             }
         }
         suspectButton.apply {
-            val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+            val pickContactIntent =
+                Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
             setOnClickListener {
                 suspectNameResultLauncher.launch(pickContactIntent)
             }
             val packageManager: PackageManager = requireActivity().packageManager
-            val resolvedActivity: ResolveInfo? = packageManager.resolveActivity(pickContactIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            val resolvedActivity: ResolveInfo? =
+                packageManager.resolveActivity(pickContactIntent, PackageManager.MATCH_DEFAULT_ONLY)
             if (resolvedActivity == null) {
                 isEnabled = false
             }
@@ -270,12 +284,45 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 val callContactIntent =
                     Intent(Intent.ACTION_DIAL).apply {
 
-                        val phone = sphone
+                        val phone = crime.suspectPhoneNumber
                         data = Uri.parse("tel:$phone")
                     }
                 startActivity(callContactIntent)
             }
-
+        }
+        photoButton.apply {
+            val packageManager: PackageManager = requireActivity().packageManager
+            val captureImage = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            val resolvedActivity: ResolveInfo? =
+                packageManager.resolveActivity(
+                    captureImage,
+                    PackageManager.MATCH_DEFAULT_ONLY
+                )
+            if (resolvedActivity == null) {
+                isEnabled = false
+            }
+            setOnClickListener {
+                captureImage.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                val cameraActivities: List<ResolveInfo> =
+                    packageManager.queryIntentActivities(
+                        captureImage,
+                        PackageManager.MATCH_DEFAULT_ONLY
+                    )
+                for (cameraActivity in cameraActivities) {
+                    requireActivity().grantUriPermission(
+                        cameraActivity.activityInfo.packageName,
+                        photoUri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                }
+                crimePhotoResultLauncher.launch(captureImage)
+            }
+            updatePhotoView()
+        }
+        photoView.setOnClickListener {
+            val manager = parentFragmentManager
+            val dialog: PhotoViewerFragment = PhotoViewerFragment.newInstance(photoFile)
+            dialog.show(manager, DIALOG_PHOTO)
         }
     }
 
@@ -283,45 +330,54 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         when (requestCode) {
             REQUEST_TIME -> {
                 Log.d(TAG, "received result for $requestCode")
-                crimeTime = TimePickerFragment.getSelectedTime(result).toDate()
+                crime.time = TimePickerFragment.getSelectedTime(result)
                 updateUI()
             }
             REQUEST_DATE -> {
                 Log.d(TAG, "received result for $requestCode")
-                crimeDate = DatePickerFragment.getSelectedDate(result)
+                crime.date = DatePickerFragment.getSelectedDate(result)
+                updateUI()
             }
         }
     }
 
     private fun updateUI() {
-        titleField.setText(crimeTitle)
-        dateButton.text = DateFormat.format("EEE dd MMM yyyy", crimeDate)
-        timeButton.text = DateFormat.format("hh:mm", crimeTime)
-        solvedCheckBox.isChecked = crimeSolved
-        policeRequired.isChecked = crimeRequirePolice
-        if (crimeSuspect.isNotEmpty()) {
-            suspectButton.text = crimeSuspect
-            callSuspect.text = getString(R.string.crime_call_suspect_text, sphone)
-
+        titleField.setText(crime.title)
+        dateButton.text = DateFormat.format("EEE dd MMM yyyy", crime.date.toDate())
+        timeButton.text = DateFormat.format("hh:mm", crime.time.toDate())
+        solvedCheckBox.isChecked = crime.isSolved
+        policeRequired.isChecked = crime.requiresPolice
+        if (crime.suspect.isNotEmpty()) {
+            suspectButton.text = crime.suspect
+            callSuspect.text = getString(R.string.crime_call_suspect_text, crime.suspectPhoneNumber)
+        }
+        updatePhotoView()
+    }
+    private fun updatePhotoView() {
+        if (photoFile.exists()) {
+            setPic(photoFile.path, photoView)
+        } else {
+            photoView.setImageDrawable(null)
         }
     }
 
+
     private fun getCrimeReport(): String {
-        val solvedString = if (crimeSolved) {
+        val solvedString = if (crime.isSolved) {
             getString(R.string.crime_report_solved)
         } else {
             getString(R.string.crime_report_unsolved)
         }
-        val dateString = DateFormat.format(DATE_FORMAT, crimeDate).toString()
-        val timeString = DateFormat.format(TIME_FORMAT, crimeTime).toString()
-        val suspect = if (crimeSuspect.isBlank()) {
+        val dateString = DateFormat.format(DATE_FORMAT, crime.date.toDate()).toString()
+        val timeString = DateFormat.format(TIME_FORMAT, crime.time.toDate()).toString()
+        val suspect = if (crime.suspect.isBlank()) {
             getString(R.string.crime_report_no_suspect)
         } else {
-            getString(R.string.crime_report_suspect, crimeSuspect)
+            getString(R.string.crime_report_suspect, crime.suspect)
         }
         return getString(
             R.string.crime_report,
-            crimeTitle, dateString, timeString, solvedString, suspect
+            crime.title, dateString, timeString, solvedString, suspect
         )
     }
 
@@ -336,6 +392,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 putSerializable("CrimeRequirePolice", crime.requiresPolice)
                 putSerializable("CrimeSuspect", crime.suspect)
                 putSerializable("sphone", crime.suspectPhoneNumber)
+                putSerializable("photoFileName", crime.photoFileName)
             }
             return CrimeFragment().apply {
                 arguments = args

@@ -22,7 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import java.util.ArrayList
+import java.util.*
 
 private const val TAG = "CrimeListFragment"
 
@@ -99,7 +99,9 @@ class CrimeListFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.new_crime -> {
-                callbacks?.newCrime()
+                val crime = Crime()
+                viewModel.addCrime(crime)
+                callbacks?.onCrimeSelected(crime)
                 true
             }
             else -> return super.onOptionsItemSelected(item)
@@ -125,9 +127,8 @@ class CrimeListFragment : Fragment() {
                 }
                 val crimeList: MutableList<Crime> = ArrayList<Crime>()
                 for (doc in documentSnapshots!!) {
-                    val note = doc.toObject(Crime::class.java)
-                    note.uid = doc.id
-                    crimeList.add(note)
+                    val crime = doc.toObject(Crime::class.java)
+                    crimeList.add(crime)
                 }
                 adapter = CrimeAdapter(crimeList)
                 crimeRecyclerView.adapter = adapter
@@ -258,6 +259,5 @@ class CrimeListFragment : Fragment() {
                 }
         }
             .show()
-
     }
 }

@@ -3,6 +3,7 @@ package com.example.criminalintent
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import java.util.*
 
 class CrimeListViewModel : ViewModel() {
     private val crimeRepository = CrimeRepository.get()
@@ -19,7 +20,9 @@ class CrimeListViewModel : ViewModel() {
             }
         }
     }
-
+    fun addCrime(crime: Crime) {
+        crimeRepository.updateCrime(crime)
+    }
     fun deleteCrime(uid: String) {
         crimeRepository.deleteBill(uid)
     }

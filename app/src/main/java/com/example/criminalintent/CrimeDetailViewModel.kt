@@ -1,6 +1,7 @@
 package com.example.criminalintent
 
 import androidx.lifecycle.ViewModel
+import java.io.File
 
 class CrimeDetailViewModel : ViewModel() {
     private val crimeRepository = CrimeRepository.get()
@@ -8,8 +9,8 @@ class CrimeDetailViewModel : ViewModel() {
     fun saveCrime(crime: Crime) {
         crimeRepository.updateCrime(crime)
     }
-
-    fun addCrime(crime: Crime) {
-        crimeRepository.addCrime(crime)
+    fun getPhotoFile(photoName: String): File {
+        return crimeRepository.getPhotoFile(photoName)
     }
+
 }

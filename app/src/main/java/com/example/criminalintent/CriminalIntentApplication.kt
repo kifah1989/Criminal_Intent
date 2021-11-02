@@ -10,6 +10,6 @@ class CriminalIntentApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
-        CrimeRepository.initialize()
+        CrimeRepository.initialize(this)
     }
 }
