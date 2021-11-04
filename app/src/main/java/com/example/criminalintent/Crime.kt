@@ -1,9 +1,11 @@
 package com.example.criminalintent
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Exclude
 import java.util.*
 
 class Crime (
+    @Exclude
     var uid: String = "${UUID.randomUUID()}",
     var title: String = "",
     var date: Timestamp = Timestamp(Date()),

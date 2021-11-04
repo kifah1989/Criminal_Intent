@@ -37,6 +37,8 @@ import android.graphics.drawable.ColorDrawable
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Observer
+import com.bumptech.glide.Glide
 
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
@@ -49,9 +51,9 @@ private const val REQUEST_CONTACT = 1
 private const val DIALOG_PHOTO = "DialogPhoto"
 
 class CrimeFragment : Fragment(), FragmentResultListener {
+    private lateinit var photoUri: Uri
     private lateinit var photoFile: File
     private lateinit var data: Intent
-    private lateinit var photoData: Intent
     private lateinit var suspectNameResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var crimePhotoResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var crime: Crime
@@ -65,7 +67,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var callSuspect: Button
     private lateinit var photoButton: ImageButton
     private lateinit var photoView: ImageView
-    private lateinit var photoUri: Uri
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
     }
@@ -90,7 +91,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                     photoResult.resultCode != Activity.RESULT_OK ->
                         return@registerForActivityResult
                     photoResult.data != null -> {
-                        photoData = photoResult.data!!
+                        crimeDetailViewModel.uploadImage(photoUri)
                         requireActivity().revokeUriPermission(photoUri,
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                     }
@@ -194,15 +195,22 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         return view
     }
 
+    private val observeImage = Observer<Uri>{
+        Glide.with(requireContext())
+            .load(it)
+            .into(photoView)
+        Log.d("crimeFragment", it.toString())
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        crimeDetailViewModel.getPhotoFileFromFirebase(crime.photoFileName)
+        crimeDetailViewModel.image.observe(viewLifecycleOwner, observeImage)
         photoFile = crimeDetailViewModel.getPhotoFile(crime.photoFileName)
         photoUri = FileProvider.getUriForFile(
             requireActivity(),
             "com.example.criminalintent.fileprovider",
             photoFile
         )
-
         updateUI()
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
@@ -317,7 +325,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 }
                 crimePhotoResultLauncher.launch(captureImage)
             }
-            updatePhotoView()
         }
         photoView.setOnClickListener {
             val manager = parentFragmentManager
@@ -351,16 +358,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             suspectButton.text = crime.suspect
             callSuspect.text = getString(R.string.crime_call_suspect_text, crime.suspectPhoneNumber)
         }
-        updatePhotoView()
     }
-    private fun updatePhotoView() {
-        if (photoFile.exists()) {
-            setPic(photoFile.path, photoView)
-        } else {
-            photoView.setImageDrawable(null)
-        }
-    }
-
 
     private fun getCrimeReport(): String {
         val solvedString = if (crime.isSolved) {

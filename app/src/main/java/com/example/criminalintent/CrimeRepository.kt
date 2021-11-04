@@ -1,8 +1,11 @@
 package com.example.criminalintent
 
 import android.content.Context
+import android.net.Uri
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ktx.storage
 import java.io.File
 import java.util.*
 
@@ -15,6 +18,21 @@ class CrimeRepository private constructor(context: Context) {
     private val filesDir = context.applicationContext.filesDir
 
     fun getPhotoFile(photoName:String): File = File(filesDir, photoName)
+
+    fun getPhotoFromFireBase(photoName: String,callback:(Uri?)->Unit){
+        val gsReference = Firebase.storage.getReferenceFromUrl("gs://criminal-intent-376ea.appspot.com/images/$photoName")
+        gsReference.downloadUrl.addOnSuccessListener { uri ->
+            callback(uri)
+        }
+    }
+
+    fun uploadImageToFireBase(imageUri: Uri){
+        val fileName = File(imageUri.path!!).name
+val storageRef = FirebaseStorage.getInstance().getReference("images/$fileName")
+        storageRef.putFile(imageUri).addOnSuccessListener {
+
+        }
+    }
 
     fun getCrimes(callback: (List<Crime>?, String?) -> Unit) {
         dataBase.collection(CRIME_COLLECTION)
