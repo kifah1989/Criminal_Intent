@@ -1,6 +1,7 @@
 package com.example.criminalintent
 
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.util.Log
@@ -10,18 +11,23 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.io.File
 import java.util.*
 
 private const val TAG = "CrimeListFragment"
@@ -36,6 +42,7 @@ class CrimeListFragment : Fragment() {
     private lateinit var auth: FirebaseAuth
     private lateinit var fireStoreListener: ListenerRegistration
     private var adapter: CrimeAdapter? = CrimeAdapter(emptyList())
+
 
     /**
      * Required interface for hosting activities
@@ -108,6 +115,7 @@ class CrimeListFragment : Fragment() {
         }
     }
 
+
     private fun updateUI(crimes: List<Crime>) {
         if (crimes.isEmpty()) {
             noCrimeText.text = getText(R.string.no_crimes_available)
@@ -136,13 +144,18 @@ class CrimeListFragment : Fragment() {
     }
 
     private abstract class CrimeHolder(view: View) : RecyclerView.ViewHolder(view) {
+
+
         var crime = Crime()
         val titleTextView: TextView = itemView.findViewById(R.id.crime_title)
         val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
+
     }
 
     private inner class NormalCrimeHolder(view: View) : CrimeHolder(view), View.OnClickListener {
         val solvedImageView: ImageView = itemView.findViewById(R.id.crime_solved)
+        val crimeImage: ImageView = itemView.findViewById(R.id.crimeImage)
+
 
         init {
             itemView.setOnClickListener(this)
@@ -159,6 +172,9 @@ class CrimeListFragment : Fragment() {
             } else {
                 View.GONE
             }
+            Glide.with(requireContext())
+                .load(this.crime.photoUrl)
+                .into(crimeImage)
         }
 
         override fun onClick(v: View) {
@@ -169,6 +185,8 @@ class CrimeListFragment : Fragment() {
     private inner class SeriousCrimeHolder(view: View) : CrimeHolder(view), View.OnClickListener {
         val solvedImageView: ImageView = itemView.findViewById(R.id.crime_solved)
         val contactPoliceButton: Button = itemView.findViewById(R.id.call_police)
+        val crimeImage: ImageView = itemView.findViewById(R.id.crimeImage)
+
 
         init {
             itemView.setOnClickListener(this)
@@ -189,6 +207,9 @@ class CrimeListFragment : Fragment() {
             contactPoliceButton.setOnClickListener {
                 Toast.makeText(context, "calling 911", Toast.LENGTH_SHORT).show()
             }
+            Glide.with(requireContext())
+                .load(this.crime.photoUrl)
+                .into(crimeImage)
         }
 
         override fun onClick(v: View) {

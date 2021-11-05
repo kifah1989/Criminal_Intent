@@ -84,6 +84,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             crime.suspect = arguments?.getSerializable("CrimeSuspect") as String
             crime.suspectPhoneNumber = arguments?.getSerializable("sphone") as String
             crime.photoFileName = arguments?.getSerializable("photoFileName") as String
+            crime.photoUrl = arguments?.getSerializable("photoUrl") as String
         }
         crimePhotoResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { photoResult ->
@@ -92,6 +93,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                         return@registerForActivityResult
                     photoResult.data != null -> {
                         crimeDetailViewModel.uploadImage(photoUri)
+                        crimeDetailViewModel.saveCrime(crime)
                         requireActivity().revokeUriPermission(photoUri,
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                     }
@@ -104,7 +106,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
 
                     result.data != null -> {
                         data = result.data!!
-
+                        updatePhotView(crime.photoUrl)
                         val contactUri: Uri? = data.data
                         // queryFieldsName: a List to return the DISPLAY_NAME Column Only
                         val queryFieldsName = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
@@ -195,16 +197,21 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         return view
     }
 
-    private val observeImage = Observer<Uri>{
-        Glide.with(requireContext())
-            .load(it)
-            .into(photoView)
-        Log.d("crimeFragment", it.toString())
+    private val observeImage = Observer<String>{
+        crime.photoUrl = it
+        updatePhotView(it)
+            Log.d("crimeFragment", it.toString())
     }
+
+    private fun updatePhotView(photUrl: String) {
+        Glide.with(requireContext())
+            .load(photUrl)
+            .into(photoView)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        crimeDetailViewModel.getPhotoFileFromFirebase(crime.photoFileName)
-        crimeDetailViewModel.image.observe(viewLifecycleOwner, observeImage)
+        crimeDetailViewModel.remoteImageUrl.observe(viewLifecycleOwner, observeImage)
         photoFile = crimeDetailViewModel.getPhotoFile(crime.photoFileName)
         photoUri = FileProvider.getUriForFile(
             requireActivity(),
@@ -324,6 +331,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                     )
                 }
                 crimePhotoResultLauncher.launch(captureImage)
+
             }
         }
         photoView.setOnClickListener {
@@ -391,6 +399,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 putSerializable("CrimeSuspect", crime.suspect)
                 putSerializable("sphone", crime.suspectPhoneNumber)
                 putSerializable("photoFileName", crime.photoFileName)
+                putSerializable("photoUrl", crime.photoUrl)
             }
             return CrimeFragment().apply {
                 arguments = args

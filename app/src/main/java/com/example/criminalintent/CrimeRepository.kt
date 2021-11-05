@@ -1,13 +1,20 @@
 package com.example.criminalintent
 
+import android.content.ClipData
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ListResult
+import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.ktx.storage
 import java.io.File
 import java.util.*
+import kotlin.collections.ArrayList
 
 private const val CRIME_COLLECTION = "Crimes"
 
@@ -19,28 +26,27 @@ class CrimeRepository private constructor(context: Context) {
 
     fun getPhotoFile(photoName:String): File = File(filesDir, photoName)
 
-    fun getPhotoFromFireBase(photoName: String,callback:(Uri?)->Unit){
-        val gsReference = Firebase.storage.getReferenceFromUrl("gs://criminal-intent-376ea.appspot.com/images/$photoName")
-        gsReference.downloadUrl.addOnSuccessListener { uri ->
-            callback(uri)
-        }
-    }
-
-    fun uploadImageToFireBase(imageUri: Uri){
+    fun uploadImageToFireBase(imageUri: Uri, callback: (String?) -> Unit){
         val fileName = File(imageUri.path!!).name
 val storageRef = FirebaseStorage.getInstance().getReference("images/$fileName")
         storageRef.putFile(imageUri).addOnSuccessListener {
+            val downloadUrl = storageRef.downloadUrl
+            downloadUrl.addOnSuccessListener {
 
+                val remoteUri = it.toString()
+                callback(remoteUri)
+                // update our Cloud Firestore with the public image URI.
+            }
         }
     }
 
     fun getCrimes(callback: (List<Crime>?, String?) -> Unit) {
         dataBase.collection(CRIME_COLLECTION)
             .get()
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
                     val crimeList: MutableList<Crime> = ArrayList<Crime>()
-                    for (doc in task.result!!) {
+                    for (doc in it.result!!) {
                         val crime: Crime = doc.toObject(Crime::class.java)
                         crime.uid = doc.id
                         crimeList.add(crime)
