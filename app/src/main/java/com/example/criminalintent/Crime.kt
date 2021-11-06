@@ -6,7 +6,6 @@ import com.google.firebase.firestore.IgnoreExtraProperties
 import java.util.*
 @IgnoreExtraProperties
 class Crime (
-    @Exclude @set:Exclude @get:Exclude
     var uid: String = "${UUID.randomUUID()}",
     var title: String = "",
     var date: Timestamp = Timestamp(Date()),
@@ -15,8 +14,7 @@ class Crime (
     var requiresPolice: Boolean = false,
     var suspect: String = "",
     var suspectPhoneNumber: String = "",
-    @Exclude @set:Exclude @get:Exclude
     var photoFileName: String = "IMG_$uid.jpg",
-    var photoUrl: String = ""
+    var photoRemoteUrl: String = ""
 )
 

@@ -36,6 +36,7 @@ import android.graphics.Picture
 import android.graphics.drawable.ColorDrawable
 import android.view.*
 import androidx.appcompat.app.AlertDialog
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
 import com.bumptech.glide.Glide
@@ -84,7 +85,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             crime.suspect = arguments?.getSerializable("CrimeSuspect") as String
             crime.suspectPhoneNumber = arguments?.getSerializable("sphone") as String
             crime.photoFileName = arguments?.getSerializable("photoFileName") as String
-            crime.photoUrl = arguments?.getSerializable("photoUrl") as String
+            crime.photoRemoteUrl = arguments?.getSerializable("photoUrl") as String
         }
         crimePhotoResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { photoResult ->
@@ -94,6 +95,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                     photoResult.data != null -> {
                         crimeDetailViewModel.uploadImage(photoUri)
                         crimeDetailViewModel.saveCrime(crime)
+                        updatePhotView()
                         requireActivity().revokeUriPermission(photoUri,
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                     }
@@ -106,7 +108,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
 
                     result.data != null -> {
                         data = result.data!!
-                        updatePhotView(crime.photoUrl)
                         val contactUri: Uri? = data.data
                         // queryFieldsName: a List to return the DISPLAY_NAME Column Only
                         val queryFieldsName = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
@@ -197,21 +198,21 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         return view
     }
 
-    private val observeImage = Observer<String>{
-        crime.photoUrl = it
-        updatePhotView(it)
+    private val observeRemoteImage = Observer<String>{
+        crime.photoRemoteUrl = it
+        updatePhotView()
             Log.d("crimeFragment", it.toString())
     }
 
-    private fun updatePhotView(photUrl: String) {
+    private fun updatePhotView() {
         Glide.with(requireContext())
-            .load(photUrl)
+            .load(crime.photoRemoteUrl)
             .into(photoView)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        crimeDetailViewModel.remoteImageUrl.observe(viewLifecycleOwner, observeImage)
+        crimeDetailViewModel.remoteImageUrl.observe(viewLifecycleOwner, observeRemoteImage)
         photoFile = crimeDetailViewModel.getPhotoFile(crime.photoFileName)
         photoUri = FileProvider.getUriForFile(
             requireActivity(),
@@ -219,6 +220,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             photoFile
         )
         updateUI()
+        updatePhotView()
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
     }
@@ -399,7 +401,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 putSerializable("CrimeSuspect", crime.suspect)
                 putSerializable("sphone", crime.suspectPhoneNumber)
                 putSerializable("photoFileName", crime.photoFileName)
-                putSerializable("photoUrl", crime.photoUrl)
+                putSerializable("photoUrl", crime.photoRemoteUrl)
             }
             return CrimeFragment().apply {
                 arguments = args

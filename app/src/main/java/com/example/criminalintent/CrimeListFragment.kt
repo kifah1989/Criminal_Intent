@@ -117,21 +117,24 @@ class CrimeListFragment : Fragment() {
 
 
     private fun updateUI(crimes: List<Crime>) {
-        if (crimes.isEmpty()) {
-            noCrimeText.text = getText(R.string.no_crimes_available)
-            addCrime.setOnClickListener {
-                callbacks?.newCrime()
-            }
-        } else {
-            noCrimeText.visibility =
-                View.GONE
-            addCrime.visibility = View.GONE
-        }
         fireStoreListener = dataBase.collection("Crimes")
             .addSnapshotListener { documentSnapshots, e ->
                 if (e != null) {
                     Log.e(TAG, "Listen failed!", e)
                     return@addSnapshotListener
+                }
+                if (documentSnapshots!!.isEmpty) {
+                    noCrimeText.visibility =
+                        View.VISIBLE
+                    addCrime.visibility = View.VISIBLE
+                    noCrimeText.text = getText(R.string.no_crimes_available)
+                    addCrime.setOnClickListener {
+                        callbacks?.newCrime()
+                    }
+                } else {
+                    noCrimeText.visibility =
+                        View.GONE
+                    addCrime.visibility = View.GONE
                 }
                 val crimeList: MutableList<Crime> = ArrayList<Crime>()
                 for (doc in documentSnapshots!!) {
@@ -173,7 +176,7 @@ class CrimeListFragment : Fragment() {
                 View.GONE
             }
             Glide.with(requireContext())
-                .load(this.crime.photoUrl)
+                .load(this.crime.photoRemoteUrl)
                 .into(crimeImage)
         }
 
@@ -208,7 +211,7 @@ class CrimeListFragment : Fragment() {
                 Toast.makeText(context, "calling 911", Toast.LENGTH_SHORT).show()
             }
             Glide.with(requireContext())
-                .load(this.crime.photoUrl)
+                .load(this.crime.photoRemoteUrl)
                 .into(crimeImage)
         }
 
