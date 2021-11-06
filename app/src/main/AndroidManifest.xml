@@ -2,11 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.criminalintent">
     <uses-feature android:name="android.hardware.camera"
-        android:required="false"/>
+        android:required="true"/>
 
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+
     <queries>
         <intent>
             <action android:name="android.intent.action.PICK" />

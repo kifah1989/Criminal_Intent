@@ -1,6 +1,7 @@
 package com.example.criminalintent
 
 import android.app.Activity
+import android.app.Activity.RESULT_OK
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
@@ -34,12 +35,14 @@ import android.graphics.Color
 import android.graphics.Picture
 
 import android.graphics.drawable.ColorDrawable
+import android.os.Environment
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
 import com.bumptech.glide.Glide
+import java.io.IOException
 
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
@@ -48,8 +51,8 @@ private const val ARG_CRIME_ID = "crime_id"
 private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
 private const val TAG = "CrimeFragment"
-private const val REQUEST_CONTACT = 1
 private const val DIALOG_PHOTO = "DialogPhoto"
+private const val REQUEST_IMAGE_CAPTURE = 1
 
 class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var photoUri: Uri
@@ -68,6 +71,8 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var callSuspect: Button
     private lateinit var photoButton: ImageButton
     private lateinit var photoView: ImageView
+    lateinit var currentPhotoPath: String
+
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
     }
@@ -84,23 +89,19 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             crime.requiresPolice = arguments?.getSerializable("CrimeRequirePolice") as Boolean
             crime.suspect = arguments?.getSerializable("CrimeSuspect") as String
             crime.suspectPhoneNumber = arguments?.getSerializable("sphone") as String
-            crime.photoFileName = arguments?.getSerializable("photoFileName") as String
             crime.photoRemoteUrl = arguments?.getSerializable("photoUrl") as String
         }
-        crimePhotoResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { photoResult ->
-                when {
-                    photoResult.resultCode != Activity.RESULT_OK ->
-                        return@registerForActivityResult
-                    photoResult.data != null -> {
-                        crimeDetailViewModel.uploadImage(photoUri)
-                        crimeDetailViewModel.saveCrime(crime)
-                        updatePhotView()
-                        requireActivity().revokeUriPermission(photoUri,
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    }
-                }
-            }
+//        crimePhotoResultLauncher =
+//            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { photoResult ->
+//                when {
+//                    photoResult.resultCode != Activity.RESULT_OK ->
+//                        return@registerForActivityResult
+//                    photoResult.data != null -> {
+//                        requireActivity().revokeUriPermission(photoUri,
+//                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+//                    }
+//                }
+//            }
         suspectNameResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 when {
@@ -209,16 +210,15 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             .load(crime.photoRemoteUrl)
             .into(photoView)
     }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+                crimeDetailViewModel.uploadImage(photoUri, crime)
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         crimeDetailViewModel.remoteImageUrl.observe(viewLifecycleOwner, observeRemoteImage)
-        photoFile = crimeDetailViewModel.getPhotoFile(crime.photoFileName)
-        photoUri = FileProvider.getUriForFile(
-            requireActivity(),
-            "com.example.criminalintent.fileprovider",
-            photoFile
-        )
         updateUI()
         updatePhotView()
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
@@ -307,33 +307,56 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 startActivity(callContactIntent)
             }
         }
-        photoButton.apply {
-            val packageManager: PackageManager = requireActivity().packageManager
-            val captureImage = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            val resolvedActivity: ResolveInfo? =
-                packageManager.resolveActivity(
-                    captureImage,
-                    PackageManager.MATCH_DEFAULT_ONLY
-                )
-            if (resolvedActivity == null) {
-                isEnabled = false
-            }
-            setOnClickListener {
-                captureImage.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                val cameraActivities: List<ResolveInfo> =
-                    packageManager.queryIntentActivities(
-                        captureImage,
-                        PackageManager.MATCH_DEFAULT_ONLY
-                    )
-                for (cameraActivity in cameraActivities) {
-                    requireActivity().grantUriPermission(
-                        cameraActivity.activityInfo.packageName,
-                        photoUri,
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
-                }
-                crimePhotoResultLauncher.launch(captureImage)
+        photoButton.setOnClickListener {
+//            val packageManager: PackageManager = requireActivity().packageManager
+//            val captureImage = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+//            val resolvedActivity: ResolveInfo? =
+//                packageManager.resolveActivity(
+//                    captureImage,
+//                    PackageManager.MATCH_DEFAULT_ONLY
+//                )
+//            if (resolvedActivity == null) {
+//                isEnabled = false
+//            }
+//            setOnClickListener {
+//                captureImage.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+//                val cameraActivities: List<ResolveInfo> =
+//                    packageManager.queryIntentActivities(
+//                        captureImage,
+//                        PackageManager.MATCH_DEFAULT_ONLY
+//                    )
+//                for (cameraActivity in cameraActivities) {
+//                    requireActivity().grantUriPermission(
+//                        cameraActivity.activityInfo.packageName,
+//                        photoUri,
+//                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+//                    )
+//                }
+//                startActivityForResult(captureImage, REQUEST_IMAGE_CAPTURE)
+//            }
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+                // Ensure that there's a camera activity to handle the intent
+                val packageManager: PackageManager = requireActivity().packageManager
+                takePictureIntent.resolveActivity(packageManager)?.also {
+                    // Create the File where the photo should go
+                    val photoFile: File? = try {
+                        createImageFile()
+                    } catch (ex: IOException) {
+                        // Error occurred while creating the File
 
+                        null
+                    }
+                    // Continue only if the File was successfully created
+                    photoFile?.also {
+                        photoUri = FileProvider.getUriForFile(
+                            requireActivity(),
+                            "com.example.criminalintent.fileprovider",
+                            it
+                        )
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+                    }
+                }
             }
         }
         photoView.setOnClickListener {
@@ -342,6 +365,17 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             dialog.show(manager, DIALOG_PHOTO)
         }
     }
+    @Throws(IOException::class)
+    private fun createImageFile(): File? {
+        val filesDir = context?.applicationContext?.filesDir
+
+        // Create an image file name
+            return File(filesDir,"JPEG_${crime.uid}.jpg")
+                // Save a file: path for use with ACTION_VIEW intents
+
+        }
+
+
 
     override fun onFragmentResult(requestCode: String, result: Bundle) {
         when (requestCode) {
@@ -400,7 +434,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 putSerializable("CrimeRequirePolice", crime.requiresPolice)
                 putSerializable("CrimeSuspect", crime.suspect)
                 putSerializable("sphone", crime.suspectPhoneNumber)
-                putSerializable("photoFileName", crime.photoFileName)
                 putSerializable("photoUrl", crime.photoRemoteUrl)
             }
             return CrimeFragment().apply {

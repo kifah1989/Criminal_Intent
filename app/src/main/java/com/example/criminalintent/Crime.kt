@@ -14,7 +14,6 @@ class Crime (
     var requiresPolice: Boolean = false,
     var suspect: String = "",
     var suspectPhoneNumber: String = "",
-    var photoFileName: String = "IMG_$uid.jpg",
     var photoRemoteUrl: String = ""
 )
 

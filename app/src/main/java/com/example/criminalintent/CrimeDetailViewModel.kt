@@ -20,9 +20,10 @@ class CrimeDetailViewModel : ViewModel() {
         return crimeRepository.getPhotoFile(photoName)
     }
 
-    fun uploadImage(imageUri: Uri){
-        crimeRepository.uploadImageToFireBase(imageUri){
+    fun uploadImage(imageUri: Uri?, crime:Crime){
+        crimeRepository.uploadImageToFireBase(imageUri!!){
             _remoteImageUrl.value = it
+            saveCrime(crime)
         }
     }
 
