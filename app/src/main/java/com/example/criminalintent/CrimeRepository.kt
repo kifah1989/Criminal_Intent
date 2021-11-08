@@ -29,6 +29,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 
 import android.provider.MediaStore
+import androidx.exifinterface.media.ExifInterface
 import java.io.ByteArrayOutputStream
 
 
@@ -47,7 +48,7 @@ class CrimeRepository private constructor(context: Context) {
 
     fun uploadImageToFireBase(imageUri: Uri, callback: (String?) -> Unit){
         val fileName = File(imageUri.path!!).name
-val storageRef = FirebaseStorage.getInstance().getReference("images/$fileName")
+        val storageRef = FirebaseStorage.getInstance().getReference("images/$fileName")
         val bmp = BitmapFactory.decodeFile(getPhotoFile(fileName).absolutePath)
         val baos = ByteArrayOutputStream()
         bmp.compress(Bitmap.CompressFormat.JPEG, 25, baos)
@@ -105,10 +106,12 @@ val storageRef = FirebaseStorage.getInstance().getReference("images/$fileName")
     }
 
     fun deleteBill(uid: String) {
+        val storageRef = FirebaseStorage.getInstance().getReference("images/JPEG_${uid}.jpg")
         dataBase.collection(CRIME_COLLECTION)
-            .document(uid.toString())
+            .document(uid)
             .delete()
             .addOnSuccessListener {
+                storageRef.delete()
             }
             .addOnFailureListener {
             }

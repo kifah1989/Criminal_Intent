@@ -57,7 +57,6 @@ private const val REQUEST_IMAGE_CAPTURE = 1
 
 class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var photoUri: Uri
-    private lateinit var photoFile: File
     private lateinit var data: Intent
     private lateinit var suspectNameResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var crime: Crime
@@ -218,11 +217,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             .load(crime.photoRemoteUrl)
             .into(photoView)
     }
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-                crimeDetailViewModel.uploadImage(photoUri, crime)
-        }
-    }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -361,6 +356,12 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 // Save a file: path for use with ACTION_VIEW intents
 
         }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            crimeDetailViewModel.uploadImage(photoUri, crime)
+        }
+    }
 
     override fun onFragmentResult(requestCode: String, result: Bundle) {
         when (requestCode) {
