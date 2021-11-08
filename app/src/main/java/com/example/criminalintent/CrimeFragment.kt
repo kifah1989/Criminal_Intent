@@ -62,6 +62,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var crime: Crime
     private lateinit var titleField: EditText
     private lateinit var barcodeButton: Button
+    private lateinit var generateBarCodeBtn: Button
     private lateinit var dateButton: Button
     private lateinit var timeButton: Button
     private lateinit var solvedCheckBox: CheckBox
@@ -193,6 +194,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         val view = inflater.inflate(R.layout.fragment_crime, container, false)
         titleField = view.findViewById(R.id.crime_title) as EditText
         barcodeButton = view.findViewById(R.id.barcodeButton) as Button
+        generateBarCodeBtn = view.findViewById(R.id.generateBtn) as Button
         dateButton = view.findViewById(R.id.crime_date) as Button
         timeButton = view.findViewById(R.id.crime_time) as Button
         solvedCheckBox = view.findViewById(R.id.crime_solved_fr) as CheckBox
@@ -277,6 +279,15 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         barcodeButton.setOnClickListener{
             callbacks?.newBarCode(REQUEST_BARCODE)
         }
+        generateBarCodeBtn.setOnClickListener{
+            val fragment = GenerateBarCodeFragment()
+            parentFragmentManager
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
         reportButton.setOnClickListener {
             crimeDetailViewModel.saveCrime(crime)
             Intent(Intent.ACTION_SEND).apply {

@@ -29,4 +29,6 @@
     <string name="crime_report_subject">CriminalIntent Crime Report</string>
     <string name="send_report">Send crime report via</string>
     <string name="barcode_button">Scan Barcode</string>
+    <string name="Generate_BarCode_Button">Generate BareCode</string>
+    <string name="generate_text">Generate Text</string>
 </resources>
