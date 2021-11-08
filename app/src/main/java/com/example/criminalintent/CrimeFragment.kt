@@ -50,6 +50,7 @@ private const val TIME_FORMAT = "hh:mm"
 private const val ARG_CRIME_ID = "crime_id"
 private const val REQUEST_DATE = "DialogDate"
 private const val REQUEST_TIME = "DialogTime"
+private const val REQUEST_BARCODE = "FragmentBarCode"
 private const val TAG = "CrimeFragment"
 private const val DIALOG_PHOTO = "DialogPhoto"
 private const val REQUEST_IMAGE_CAPTURE = 1
@@ -59,9 +60,9 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var photoFile: File
     private lateinit var data: Intent
     private lateinit var suspectNameResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var crimePhotoResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var crime: Crime
     private lateinit var titleField: EditText
+    private lateinit var barcodeButton: Button
     private lateinit var dateButton: Button
     private lateinit var timeButton: Button
     private lateinit var solvedCheckBox: CheckBox
@@ -71,11 +72,27 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     private lateinit var callSuspect: Button
     private lateinit var photoButton: ImageButton
     private lateinit var photoView: ImageView
-    lateinit var currentPhotoPath: String
+    private var callbacks: Callbacks? = null
+
+
+    interface Callbacks {
+        fun newBarCode(requestCode: String) {
+        }
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        callbacks = context as Callbacks?
+    }
+    override fun onDetach() {
+        super.onDetach()
+        callbacks = null
+    }
 
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
         ViewModelProvider(this).get(CrimeDetailViewModel::class.java)
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,17 +108,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             crime.suspectPhoneNumber = arguments?.getSerializable("sphone") as String
             crime.photoRemoteUrl = arguments?.getSerializable("photoUrl") as String
         }
-//        crimePhotoResultLauncher =
-//            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { photoResult ->
-//                when {
-//                    photoResult.resultCode != Activity.RESULT_OK ->
-//                        return@registerForActivityResult
-//                    photoResult.data != null -> {
-//                        requireActivity().revokeUriPermission(photoUri,
-//                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-//                    }
-//                }
-//            }
+
         suspectNameResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 when {
@@ -186,6 +193,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_crime, container, false)
         titleField = view.findViewById(R.id.crime_title) as EditText
+        barcodeButton = view.findViewById(R.id.barcodeButton) as Button
         dateButton = view.findViewById(R.id.crime_date) as Button
         timeButton = view.findViewById(R.id.crime_time) as Button
         solvedCheckBox = view.findViewById(R.id.crime_solved_fr) as CheckBox
@@ -223,6 +231,8 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         updatePhotView()
         childFragmentManager.setFragmentResultListener(REQUEST_DATE, viewLifecycleOwner, this)
         childFragmentManager.setFragmentResultListener(REQUEST_TIME, viewLifecycleOwner, this)
+        parentFragmentManager.setFragmentResultListener(REQUEST_BARCODE, viewLifecycleOwner, this)
+
     }
 
     override fun onStart() {
@@ -269,6 +279,9 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             TimePickerFragment.newInstance(Timestamp(Date()), REQUEST_TIME)
                 .show(childFragmentManager, REQUEST_TIME)
         }
+        barcodeButton.setOnClickListener{
+            callbacks?.newBarCode(REQUEST_BARCODE)
+        }
         reportButton.setOnClickListener {
             crimeDetailViewModel.saveCrime(crime)
             Intent(Intent.ACTION_SEND).apply {
@@ -308,32 +321,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             }
         }
         photoButton.setOnClickListener {
-//            val packageManager: PackageManager = requireActivity().packageManager
-//            val captureImage = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//            val resolvedActivity: ResolveInfo? =
-//                packageManager.resolveActivity(
-//                    captureImage,
-//                    PackageManager.MATCH_DEFAULT_ONLY
-//                )
-//            if (resolvedActivity == null) {
-//                isEnabled = false
-//            }
-//            setOnClickListener {
-//                captureImage.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-//                val cameraActivities: List<ResolveInfo> =
-//                    packageManager.queryIntentActivities(
-//                        captureImage,
-//                        PackageManager.MATCH_DEFAULT_ONLY
-//                    )
-//                for (cameraActivity in cameraActivities) {
-//                    requireActivity().grantUriPermission(
-//                        cameraActivity.activityInfo.packageName,
-//                        photoUri,
-//                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-//                    )
-//                }
-//                startActivityForResult(captureImage, REQUEST_IMAGE_CAPTURE)
-//            }
             Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
                 // Ensure that there's a camera activity to handle the intent
                 val packageManager: PackageManager = requireActivity().packageManager
@@ -361,7 +348,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         }
         photoView.setOnClickListener {
             val manager = parentFragmentManager
-            val dialog: PhotoViewerFragment = PhotoViewerFragment.newInstance(photoFile)
+            val dialog: PhotoViewerFragment = PhotoViewerFragment.newInstance(crime.photoRemoteUrl)
             dialog.show(manager, DIALOG_PHOTO)
         }
     }
@@ -375,8 +362,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
 
         }
 
-
-
     override fun onFragmentResult(requestCode: String, result: Bundle) {
         when (requestCode) {
             REQUEST_TIME -> {
@@ -388,6 +373,10 @@ class CrimeFragment : Fragment(), FragmentResultListener {
                 Log.d(TAG, "received result for $requestCode")
                 crime.date = DatePickerFragment.getSelectedDate(result)
                 updateUI()
+            }
+            REQUEST_BARCODE ->{
+                Log.d(TAG, "received result for $requestCode")
+                crime.barcode = CodeScannerFragment.getBarCode(result) as String
             }
         }
     }

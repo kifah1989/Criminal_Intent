@@ -10,31 +10,35 @@ import androidx.annotation.Nullable
 import androidx.fragment.app.DialogFragment
 import java.io.File
 import android.graphics.BitmapFactory
+import android.net.Uri
+import com.bumptech.glide.Glide
 
 class PhotoViewerFragment : DialogFragment() {
     private var mPhotoView: ImageView? = null
-    private var mPhotoFile: File? = null
+    private var mPhotoFile: String? = null
     @Nullable override fun onCreateView(
         inflater: LayoutInflater,
         @Nullable container: ViewGroup?,
         @Nullable savedInstanceState: Bundle?
     ): View {
-        mPhotoFile = requireArguments().getSerializable(ARG_PHOTO_FILE) as File?
+        mPhotoFile = requireArguments().getString(ARG_PHOTO_FILE) as String
         val view: View = inflater.inflate(R.layout.dialog_photo, container, false)
         mPhotoView = view.findViewById<View>(R.id.photo_view_dialog) as ImageView
-        if (mPhotoFile == null || !mPhotoFile!!.exists()) {
+        if (mPhotoFile == null) {
             mPhotoView!!.setImageDrawable(null)
         } else {
-            setPic(mPhotoFile!!.path, mPhotoView!!)
+            Glide.with(requireContext())
+                .load(mPhotoFile)
+                .into(mPhotoView!!)
         }
         return view
     }
 
     companion object {
         private const val ARG_PHOTO_FILE = "photoFile"
-        fun newInstance(photoFile: File?): PhotoViewerFragment {
+        fun newInstance(photoFile: String?): PhotoViewerFragment {
             val args = Bundle()
-            args.putSerializable(ARG_PHOTO_FILE, photoFile)
+            args.putString(ARG_PHOTO_FILE, photoFile)
             val fragment = PhotoViewerFragment()
             fragment.arguments = args
             return fragment

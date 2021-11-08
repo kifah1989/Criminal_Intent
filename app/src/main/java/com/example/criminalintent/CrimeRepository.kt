@@ -15,6 +15,25 @@ import com.google.firebase.storage.ktx.storage
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
+import android.widget.Toast
+
+import androidx.annotation.NonNull
+
+import com.google.android.gms.tasks.OnFailureListener
+
+import com.google.firebase.storage.UploadTask
+
+import com.google.android.gms.tasks.OnSuccessListener
+
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+
+import android.provider.MediaStore
+import java.io.ByteArrayOutputStream
+
+
+
+
 
 private const val CRIME_COLLECTION = "Crimes"
 
@@ -29,14 +48,21 @@ class CrimeRepository private constructor(context: Context) {
     fun uploadImageToFireBase(imageUri: Uri, callback: (String?) -> Unit){
         val fileName = File(imageUri.path!!).name
 val storageRef = FirebaseStorage.getInstance().getReference("images/$fileName")
-        storageRef.putFile(imageUri).addOnSuccessListener {
+        val bmp = BitmapFactory.decodeFile(getPhotoFile(fileName).absolutePath)
+        val baos = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.JPEG, 25, baos)
+        val data = baos.toByteArray()
+        //uploading the image
+        //uploading the image
+        val uploadTask2: UploadTask = storageRef.putBytes(data)
+        uploadTask2.addOnSuccessListener {
             val downloadUrl = storageRef.downloadUrl
             downloadUrl.addOnSuccessListener {
-
                 val remoteUri = it.toString()
                 callback(remoteUri)
-                // update our Cloud Firestore with the public image URI.
             }
+        }.addOnFailureListener {
+
         }
     }
 

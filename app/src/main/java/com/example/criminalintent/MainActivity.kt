@@ -6,7 +6,7 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 
-class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragment.Callbacks {
+class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks, LoginFragment.Callbacks, CrimeFragment.Callbacks {
     private lateinit var logOutBtn: Button
     private lateinit var auth: FirebaseAuth
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +41,15 @@ class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks, LoginFrag
 
     override fun newCrime() {
         val fragment = CrimeFragment.newCrime()
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    override fun newBarCode(requestCode:String) {
+        val fragment = CodeScannerFragment.newInstance(requestCode)
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.fragment_container, fragment)

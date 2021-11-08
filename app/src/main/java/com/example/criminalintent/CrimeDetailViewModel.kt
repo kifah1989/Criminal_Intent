@@ -16,9 +16,6 @@ class CrimeDetailViewModel : ViewModel() {
     fun saveCrime(crime: Crime) {
         crimeRepository.updateCrime(crime)
     }
-    fun getPhotoFile(photoName: String): File {
-        return crimeRepository.getPhotoFile(photoName)
-    }
 
     fun uploadImage(imageUri: Uri?, crime:Crime){
         crimeRepository.uploadImageToFireBase(imageUri!!){
