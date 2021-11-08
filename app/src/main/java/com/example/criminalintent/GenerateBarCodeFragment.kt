@@ -170,7 +170,7 @@ class GenerateBarCodeFragment: Fragment() {
         fos?.use {
             //Finally writing the bitmap to the output stream that we opened
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-            Toast.makeText(requireContext(),"Saved to Photos",Toast.LENGTH_SHORT)
+            Toast.makeText(requireContext(),"Saved to Photos",Toast.LENGTH_SHORT).show()
         }
     }
 }
