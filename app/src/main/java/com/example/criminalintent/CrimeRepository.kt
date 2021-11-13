@@ -98,7 +98,7 @@ class CrimeRepository private constructor(context: Context) {
             }
     }
 
-    fun updateCrime(crimeId:String ,crime: Crime) {
+    fun updateCrime(crime: Crime) {
         dataBase.collection(CRIME_COLLECTION)
             .document(crime.uid).set(crime)
             .addOnSuccessListener {
