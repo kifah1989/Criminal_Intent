@@ -97,8 +97,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         crime = Crime()
-        if (arguments != null) {
-            crime.uid = arguments?.getSerializable(ARG_CRIME_ID) as String
+            crime.uid = arguments?.getString(ARG_CRIME_ID) as String
             crime.title = arguments?.getSerializable("CrimeTitle") as String
             crime.date = Timestamp(arguments?.getSerializable("CrimeDate") as Date)
             crime.time = Timestamp(arguments?.getSerializable("CrimeTime") as Date)
@@ -107,7 +106,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             crime.suspect = arguments?.getSerializable("CrimeSuspect") as String
             crime.suspectPhoneNumber = arguments?.getSerializable("sphone") as String
             crime.photoRemoteUrl = arguments?.getSerializable("photoUrl") as String
-        }
+
 
         suspectNameResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -289,7 +288,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         }
 
         reportButton.setOnClickListener {
-            crimeDetailViewModel.saveCrime(crime)
+            crimeDetailViewModel.saveCrime(crime.uid, crime)
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, getCrimeReport())
@@ -427,7 +426,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     companion object {
         fun newInstance(crime: Crime): CrimeFragment {
             val args = Bundle().apply {
-                putSerializable(ARG_CRIME_ID, crime.uid)
+                putString(ARG_CRIME_ID, crime.uid)
                 putSerializable("CrimeTitle", crime.title)
                 putSerializable("CrimeDate", crime.date.toDate())
                 putSerializable("CrimeTime", crime.time.toDate())

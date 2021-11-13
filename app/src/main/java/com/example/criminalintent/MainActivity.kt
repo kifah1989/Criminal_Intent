@@ -39,14 +39,6 @@ class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks, LoginFrag
             .commit()
     }
 
-    override fun newCrime() {
-        val fragment = CrimeFragment.newCrime()
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .addToBackStack(null)
-            .commit()
-    }
 
     override fun newBarCode(requestCode:String) {
         val fragment = CodeScannerFragment.newInstance(requestCode)

@@ -1,7 +1,6 @@
 package com.example.criminalintent
 
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.util.Log
@@ -11,12 +10,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
@@ -27,7 +23,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import java.io.File
 import java.util.*
 
 private const val TAG = "CrimeListFragment"
@@ -51,8 +46,6 @@ class CrimeListFragment : Fragment() {
         fun onCrimeSelected(crime: Crime) {
         }
 
-        fun newCrime() {
-        }
     }
 
     override fun onAttach(context: Context) {
@@ -107,7 +100,11 @@ class CrimeListFragment : Fragment() {
             R.id.new_crime -> {
                 val crime = Crime()
                 viewModel.addCrime(crime)
-                callbacks?.onCrimeSelected(crime)
+                viewModel.crimeId.observe(viewLifecycleOwner, {
+                    crime.uid = it
+                    callbacks?.onCrimeSelected(crime)
+                })
+
                 true
             }
             else -> return super.onOptionsItemSelected(item)
@@ -116,38 +113,34 @@ class CrimeListFragment : Fragment() {
 
 
     private fun updateUI(crimes: List<Crime>) {
-        fireStoreListener = dataBase.collection("Crimes")
-            .addSnapshotListener { documentSnapshots, e ->
-                if (e != null) {
-                    Log.e(TAG, "Listen failed!", e)
-                    return@addSnapshotListener
-                }
-                if (documentSnapshots!!.isEmpty) {
+                if (crimes.isEmpty()) {
                     noCrimeText.visibility =
                         View.VISIBLE
                     addCrime.visibility = View.VISIBLE
                     noCrimeText.text = getText(R.string.no_crimes_available)
                     addCrime.setOnClickListener {
-                        callbacks?.newCrime()
+                        val crime = Crime()
+                        viewModel.addCrime(crime)
+                        viewModel.crimeId.observe(viewLifecycleOwner, {
+                            crime.uid = it
+                            callbacks?.onCrimeSelected(crime)
+                        })
                     }
-                } else {
+                }
+                else {
                     noCrimeText.visibility =
                         View.GONE
                     addCrime.visibility = View.GONE
                 }
                 val crimeList: MutableList<Crime> = ArrayList<Crime>()
-                for (doc in documentSnapshots!!) {
-                    val crime = doc.toObject(Crime::class.java)
-                    crimeList.add(crime)
+                for (doc in crimes) {
+                    crimeList.add(doc)
                 }
                 adapter = CrimeAdapter(crimeList)
                 crimeRecyclerView.adapter = adapter
             }
-    }
 
     private abstract class CrimeHolder(view: View) : RecyclerView.ViewHolder(view) {
-
-
         var crime = Crime()
         val titleTextView: TextView = itemView.findViewById(R.id.crime_title)
         val dateTextView: TextView = itemView.findViewById(R.id.crime_date)
@@ -278,7 +271,6 @@ class CrimeListFragment : Fragment() {
             } else
                 if (i == 1) {
                     viewModel.deleteCrime(crime.uid)
-                    viewModel.fetchCrimes()
                 }
         }
             .show()

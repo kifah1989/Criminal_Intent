@@ -29,7 +29,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 
 import android.provider.MediaStore
+import android.view.View
 import androidx.exifinterface.media.ExifInterface
+import com.google.firebase.firestore.ListenerRegistration
 import java.io.ByteArrayOutputStream
 
 
@@ -37,11 +39,12 @@ import java.io.ByteArrayOutputStream
 
 
 private const val CRIME_COLLECTION = "Crimes"
-
+private const val TAG = "CrimeReository"
 
 class CrimeRepository private constructor(context: Context) {
 
     private val dataBase = Firebase.firestore
+    private lateinit var fireStoreListener: ListenerRegistration
     private val filesDir = context.applicationContext.filesDir
 
     fun getPhotoFile(photoName:String): File = File(filesDir, photoName)
@@ -67,36 +70,35 @@ class CrimeRepository private constructor(context: Context) {
         }
     }
 
-    fun getCrimes(callback: (List<Crime>?, String?) -> Unit) {
-        dataBase.collection(CRIME_COLLECTION)
-            .get()
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    val crimeList: MutableList<Crime> = ArrayList<Crime>()
-                    for (doc in it.result!!) {
-                        val crime: Crime = doc.toObject(Crime::class.java)
-                        crime.uid = doc.id
-                        crimeList.add(crime)
-                    }
-                    callback(crimeList, null)
+    fun getCrimes(callback: (List<Crime>?) -> Unit) {
+        fireStoreListener = dataBase.collection("Crimes")
+            .addSnapshotListener { documentSnapshots, e ->
+                if (e != null) {
+                    Log.e(TAG, "Listen failed!", e)
+                    return@addSnapshotListener
                 }
-            }
-            .addOnFailureListener { exception ->
-                callback(null, exception.message)
+                val crimeList: MutableList<Crime> = java.util.ArrayList<Crime>()
+                for (doc in documentSnapshots!!) {
+                    val crime = doc.toObject(Crime::class.java)
+                    crime.uid = doc.id
+                    crimeList.add(crime)
+                }
+                callback(crimeList)
+
             }
     }
 
-    fun addCrime(crime: Crime) {
+    fun addCrime(crime: Crime, callback: (String) -> Unit) {
         dataBase.collection(CRIME_COLLECTION)
             .add(crime)
             .addOnSuccessListener {
-                it.id
+                callback(it.id)
             }
             .addOnFailureListener {
             }
     }
 
-    fun updateCrime(crime: Crime) {
+    fun updateCrime(crimeId:String ,crime: Crime) {
         dataBase.collection(CRIME_COLLECTION)
             .document(crime.uid).set(crime)
             .addOnSuccessListener {

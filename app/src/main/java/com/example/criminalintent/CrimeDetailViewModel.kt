@@ -13,14 +13,13 @@ class CrimeDetailViewModel : ViewModel() {
     private val _remoteImageUrl = MutableLiveData<String>()
     val remoteImageUrl = _remoteImageUrl
 
-    fun saveCrime(crime: Crime) {
-        crimeRepository.updateCrime(crime)
+    fun saveCrime(crimeId:String, crime: Crime) {
+        crimeRepository.updateCrime(crimeId,crime)
     }
 
     fun uploadImage(imageUri: Uri?, crime:Crime){
         crimeRepository.uploadImageToFireBase(imageUri!!){
             _remoteImageUrl.value = it
-            saveCrime(crime)
         }
     }
 

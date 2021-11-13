@@ -6,7 +6,8 @@ import com.google.firebase.firestore.IgnoreExtraProperties
 import java.util.*
 @IgnoreExtraProperties
 class Crime (
-    var uid: String = "${UUID.randomUUID()}",
+    @set:Exclude @get:Exclude
+    var uid: String = "",
     var barcode:String = "",
     var title: String = "",
     var date: Timestamp = Timestamp(Date()),
