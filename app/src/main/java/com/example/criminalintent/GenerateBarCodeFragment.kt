@@ -19,16 +19,14 @@ import android.graphics.Paint.Align
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
-import java.io.FileOutputStream
-import java.io.IOException
 import android.provider.MediaStore
 
 import android.os.Environment
 import android.util.Log
 import android.widget.*
-import java.io.File
-import java.io.OutputStream
 import java.lang.Exception
+import android.content.Context.MODE_PRIVATE
+import java.io.*
 
 
 class GenerateBarCodeFragment: Fragment() {
@@ -36,7 +34,7 @@ class GenerateBarCodeFragment: Fragment() {
     private lateinit var generateButton: Button
     private lateinit var barcodeImg: ImageView
     private lateinit var printImgBtn: ImageButton
-    private lateinit var newBitmap: Bitmap
+    private var newBitmap: Bitmap? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,14 +51,19 @@ class GenerateBarCodeFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         generateButton.setOnClickListener{
             getQrCodeBitmap(serialText.text.toString())
         }
         printImgBtn.setOnClickListener{
-            saveMediaToStorage(newBitmap)
+            if(newBitmap!=null) {
+                saveMediaToStorage(newBitmap!!)
+            }else{
+                Toast.makeText(context, "generate a barcode first", Toast.LENGTH_LONG).show()
+            }
         }
     }
-    fun getQrCodeBitmap(serial:String) {
+    private fun getQrCodeBitmap(serial:String) {
         val hints = hashMapOf<EncodeHintType, Int>().also { it[EncodeHintType.MARGIN] = 1 } // Make the QR code buffer border narrower
         val size = 600 //pixels
         val bits = QRCodeWriter().encode(
@@ -86,7 +89,7 @@ class GenerateBarCodeFragment: Fragment() {
             originalBitmap.width,
             originalBitmap.height + extraHeight, Bitmap.Config.ARGB_8888
         )
-        val canvas = Canvas(newBitmap)
+        val canvas = Canvas(newBitmap!!)
         canvas.drawColor(Color.BLACK)
         canvas.drawBitmap(originalBitmap, 0f, 0f, null)
         val resources = resources
@@ -130,47 +133,54 @@ class GenerateBarCodeFragment: Fragment() {
         // Set the paint for that size.
         paint.textSize = desiredTextSize
     }
-    fun saveMediaToStorage(bitmap: Bitmap) {
+    private fun saveMediaToStorage(bitmap: Bitmap) {
         //Generating a file name
         val filename = "${serialText.text}.png"
+       val path =
+           Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val file = File(path, filename)
+        if(file.absoluteFile.exists()){
+            Toast.makeText(context, "barcode exists", Toast.LENGTH_SHORT).show()
+        }else{
+            //Output stream
+            var fos: OutputStream? = null
 
-        //Output stream
-        var fos: OutputStream? = null
+            //For devices running android >= Q
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                //getting the contentResolver
+                context?.contentResolver?.also { resolver ->
 
-        //For devices running android >= Q
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            //getting the contentResolver
-            context?.contentResolver?.also { resolver ->
+                    //Content resolver will process the contentvalues
+                    val contentValues = ContentValues().apply {
 
-                //Content resolver will process the contentvalues
-                val contentValues = ContentValues().apply {
+                        //putting file information in content values
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                        put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                    }
 
-                    //putting file information in content values
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                    //Inserting the contentValues to contentResolver and getting the Uri
+                    val imageUri: Uri? =
+                        resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+                    //Opening an outputstream with the Uri that we got
+                    fos = imageUri?.let { resolver.openOutputStream(it) }
                 }
-
-                //Inserting the contentValues to contentResolver and getting the Uri
-                val imageUri: Uri? =
-                    resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-
-                //Opening an outputstream with the Uri that we got
-                fos = imageUri?.let { resolver.openOutputStream(it) }
+            } else {
+                //These for devices running on android < Q
+                //So I don't think an explanation is needed here
+                val imagesDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                val image = File(imagesDir, filename)
+                fos = FileOutputStream(image)
             }
-        } else {
-            //These for devices running on android < Q
-            //So I don't think an explanation is needed here
-            val imagesDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            val image = File(imagesDir, filename)
-            fos = FileOutputStream(image)
+
+            fos?.use {
+                //Finally writing the bitmap to the output stream that we opened
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                Toast.makeText(requireContext(),"Saved to Photos",Toast.LENGTH_SHORT).show()
+            }
         }
 
-        fos?.use {
-            //Finally writing the bitmap to the output stream that we opened
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-            Toast.makeText(requireContext(),"Saved to Photos",Toast.LENGTH_SHORT).show()
-        }
     }
 }

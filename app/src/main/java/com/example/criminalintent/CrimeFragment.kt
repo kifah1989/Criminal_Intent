@@ -3,6 +3,7 @@ package com.example.criminalintent
 import android.app.Activity
 import android.app.Activity.RESULT_OK
 import android.app.Dialog
+import android.app.Notification
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -35,14 +36,20 @@ import android.graphics.Color
 import android.graphics.Picture
 
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Environment
 import android.view.*
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
 import com.bumptech.glide.Glide
 import java.io.IOException
+import androidx.core.app.NotificationManagerCompat
+
+
+
 
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
@@ -78,6 +85,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     interface Callbacks {
         fun newBarCode(requestCode: String) {
         }
+        fun crimeReport(crimeReport: String)
     }
 
     override fun onAttach(context: Context) {
@@ -97,6 +105,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         crime = Crime()
+        if(arguments !=null) {
             crime.uid = arguments?.getString(ARG_CRIME_ID) as String
             crime.title = arguments?.getSerializable("CrimeTitle") as String
             crime.date = Timestamp(arguments?.getSerializable("CrimeDate") as Date)
@@ -106,7 +115,7 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             crime.suspect = arguments?.getSerializable("CrimeSuspect") as String
             crime.suspectPhoneNumber = arguments?.getSerializable("sphone") as String
             crime.photoRemoteUrl = arguments?.getSerializable("photoUrl") as String
-
+        }
 
         suspectNameResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -288,18 +297,21 @@ class CrimeFragment : Fragment(), FragmentResultListener {
         }
 
         reportButton.setOnClickListener {
-            crimeDetailViewModel.saveCrime(crime.uid, crime)
-            Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, getCrimeReport())
-                putExtra(
-                    Intent.EXTRA_SUBJECT,
-                    getString(R.string.crime_report_subject)
-                )
-            }.also { intent ->
-                startActivity(intent)
-                parentFragmentManager.popBackStack()
-            }
+            crimeDetailViewModel.saveCrime(crime)
+            //parentFragmentManager.popBackStack()
+            callbacks?.crimeReport(
+                getCrimeReport())
+
+//            Intent(Intent.ACTION_SEND).apply {
+//                type = "text/plain"
+//                putExtra(Intent.EXTRA_TEXT, getCrimeReport())
+//                putExtra(
+//                    Intent.EXTRA_SUBJECT,
+//                    getString(R.string.crime_report_subject)
+//                )
+//            }.also { intent ->
+//                startActivity(intent)
+//            }
         }
         suspectButton.apply {
             val pickContactIntent =
@@ -439,10 +451,6 @@ class CrimeFragment : Fragment(), FragmentResultListener {
             return CrimeFragment().apply {
                 arguments = args
             }
-        }
-
-        fun newCrime(): CrimeFragment {
-            return CrimeFragment()
         }
     }
 }
